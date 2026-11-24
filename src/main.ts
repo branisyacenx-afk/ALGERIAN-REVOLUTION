@@ -165,8 +165,7 @@ for (let i = 0; i < 4; i++) {
   const enemy = makePerson(0x55594e, 0.95);
   enemy.position.set((i - 1.5) * 5.5, 0, -15 - (i % 2) * 5);
   enemy.userData.health = 2;
-  enemy.userData.health = 2;
-    enemy.userData.patrolX = enemy.position.x;
+  enemy.userData.patrolX = enemy.position.x;
   enemy.userData.patrolZ = enemy.position.z;
   enemy.userData.patrolPhase = i * 1.7;
   scene.add(enemy);
@@ -278,6 +277,7 @@ function resetEnemies(): void {
   for (let i = 0; i < 4; i++) {
     const enemy = makePerson(0x55594e, 0.95);
     enemy.position.set((i - 1.5) * 5.5, 0, -15 - (i % 2) * 5);
+    enemy.userData.health = 2;
     enemy.userData.patrolX = enemy.position.x;
     enemy.userData.patrolZ = enemy.position.z;
     enemy.userData.patrolPhase = i * 1.7;
