@@ -1176,6 +1176,9 @@ function drawRadar(): void {
 // ===== BATTLEFIELD EXPANSION: squads, convoy, horse patrols, aircraft, trenches and grenades =====
 type GrenadeState = { mesh: THREE.Group; velocity: THREE.Vector3; fuse: number };
 const grenades: GrenadeState[] = [];
+type TankShell = { mesh: THREE.Mesh; velocity: THREE.Vector3; life: number };
+const tankShells: TankShell[] = [];
+let tankFireClock = 4.5;
 const battleAllies: THREE.Group[] = [];
 let grenadeCount = 3;
 let rankPoints = Number(localStorage.getItem('ar-rank-points') || 0);
@@ -1293,6 +1296,25 @@ function animate(): void {
   aircraft.rotation.z = Math.sin(time * .12) * .06;
   propeller.rotation.z += delta * 32;
   convoy.forEach((truck,i)=>{truck.position.x += Math.sin(time*.22+i*.6)*delta*.32;truck.position.z += delta*.42;});
+  tankFireClock -= delta;
+  if(started&&!paused&&!gameOver&&tankFireClock<=0&&tanks.length){
+    const rig=tanks[Math.floor(time/8)%tanks.length];
+    const muzzle=rig.group.localToWorld(new THREE.Vector3(0,3.05,-6.2));
+    const target=player.position.clone().add(new THREE.Vector3(0,1,0));
+    const velocity=target.sub(muzzle).normalize().multiplyScalar(34);
+    const shell=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8),new THREE.MeshBasicMaterial({color:0xffb45b}));
+    shell.position.copy(muzzle);scene.add(shell);tankShells.push({mesh:shell,velocity,life:2.8});tankFireClock=7.5+Math.random()*4;
+  }
+  tankShells.forEach((shell,index)=>{
+    shell.life-=delta;shell.mesh.position.addScaledVector(shell.velocity,delta);
+    if(shell.life<=0||(started&&shell.mesh.position.distanceTo(player.position.clone().add(new THREE.Vector3(0,1,0)))<1.8)){
+      const impact=shell.mesh.position.clone();scene.remove(shell.mesh);shell.mesh.geometry.dispose();(shell.mesh.material as THREE.Material).dispose();
+      const flash=new THREE.Mesh(new THREE.SphereGeometry(2.1,12,10),new THREE.MeshBasicMaterial({color:0xff7d32,transparent:true,opacity:.65}));flash.position.copy(impact);scene.add(flash);
+      window.setTimeout(()=>{scene.remove(flash);flash.geometry.dispose();(flash.material as THREE.Material).dispose();},280);
+      if(started&&!playerHidden&&impact.distanceTo(player.position)<5&&damageCooldown<=0){health=Math.max(0,health-18);damageCooldown=1.1;updateHud();if(health<=0)showGameOver();}
+      tankShells.splice(index,1);
+    }
+  });
   horses.forEach((horse,i)=>{horse.position.x += Math.sin(time*.6+i)*delta*.18;horse.traverse(o=>{if(o instanceof THREE.Mesh&&o.name==='horse-leg')o.rotation.x=Math.sin(time*7+i)*.28;});});
   grenades.forEach((g,index)=>{
     g.fuse-=delta;g.velocity.y-=9.8*delta;g.mesh.position.addScaledVector(g.velocity,delta);
