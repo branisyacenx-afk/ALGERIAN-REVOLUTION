@@ -661,8 +661,52 @@ const campaignSectors = [
   { name:'جبال النمامشة', x:-350, z:-420 },
   { name:'الحدود الشمالية', x:100, z:-600 }
 ];
-const campaignOperations = ['تأمين الممر','تحرير القرية','تدمير مركز القيادة','إنقاذ المجموعة','استعادة الإمدادات','اقتحام الحصن','حماية نقطة التجمع','قطع طريق الإمداد','تطهير الغابة','السيطرة على المرتفع'];
-const campaignStageTitle = (stage:number) => campaignOperations[(stage-1)%10];
+const campaignChapters = [
+  {year:'1954–1955', title:'شرارة نوفمبر · الأوراس', terrain:0x777b5d, sky:0x9ba99a, fog:0x9ba99a, kind:'mountain', description:'بداية الثورة في جبال الأوراس وممراتها الوعرة.'},
+  {year:'1955', title:'الشمال القسنطيني', terrain:0x777b5d, sky:0xa6b4ad, fog:0xa6b4ad, kind:'village', description:'قرى وطرق ريفية في الشرق الجزائري.'},
+  {year:'1956', title:'مؤتمر الصومام · القبائل', terrain:0x52634b, sky:0xa2b2a4, fog:0xa2b2a4, kind:'forest', description:'غابات القبائل ومسالك الجبال ومراكز الاتصال.'},
+  {year:'1956–1957', title:'معركة الجزائر', terrain:0x77736a, sky:0xb4b3ad, fog:0xb4b3ad, kind:'city', description:'أزقة القصبة والأحياء الحضرية وشبكات المقاومة.'},
+  {year:'1957–1958', title:'الغرب والظهرة', terrain:0x8b8068, sky:0xb8b39e, fog:0xb8b39e, kind:'ridge', description:'مرتفعات الظهرة والطرق الريفية الغربية.'},
+  {year:'1958–1959', title:'الجنوب والواحات', terrain:0x9a865e, sky:0xc9b58d, fog:0xc9b58d, kind:'desert', description:'مسالك صحراوية وواحات ونقاط إمداد بعيدة.'},
+  {year:'1959–1960', title:'خطوط الحدود', terrain:0x77786d, sky:0xaeb7b4, fog:0xaeb7b4, kind:'border', description:'مناطق حدودية وأسلاك ومراكز مراقبة.'},
+  {year:'1960', title:'اتساع الانتفاضة', terrain:0x777b68, sky:0xb6b7a6, fog:0xb6b7a6, kind:'plateau', description:'هضاب وبلدات تتسع فيها حركة التحرير.'},
+  {year:'1961', title:'عام المفاوضات والمقاومة', terrain:0x77736a, sky:0xb5b8b1, fog:0xb5b8b1, kind:'coast', description:'مدن ساحلية وطرق استراتيجية في مرحلة حاسمة.'},
+  {year:'1962', title:'وقف إطلاق النار والاستقلال', terrain:0x66775f, sky:0xb8c8ba, fog:0xb8c8ba, kind:'liberation', description:'المراحل الأخيرة وصولاً إلى استقلال الجزائر.'}
+];
+const campaignOperations = [
+ ['تأمين ممر جبلي','حماية قرية الأوراس','استعادة مخبأ الإمداد','إنقاذ مجموعة محاصرة','تأمين طريق الاتصال','حماية قافلة التموين','السيطرة على المرتفع','إخلاء نقطة طبية','تأمين مخيم الجبل','فتح ممر آمن'],
+ ['تأمين مدخل القرية','حماية السكان','استعادة مركز اتصال','تأمين الطريق الريفي','إجلاء المدنيين','حراسة نقطة الإمداد','تعطيل دورية معادية','تأمين المعبر','حماية اجتماع سري','فتح طريق للانسحاب'],
+ ['حماية مسلك الغابة','تأمين بيت الاتصال','نقل وثائق المؤتمر','حراسة الممر الجبلي','إنقاذ رسول الثورة','تأمين مخزن المؤن','حماية موقع القيادة','استعادة طريق الغابة','تأمين نقطة مراقبة','حماية طريق الانسحاب'],
+ ['عبور أزقة القصبة','حماية شبكة الاتصال','إجلاء عائلة','تأمين سطح مراقبة','استعادة وثائق سرية','حماية ملجأ سري','تأمين ممر ضيق','إخراج مجموعة محاصرة','حماية نقطة إسعاف','تأمين الحي'],
+ ['تأمين قرية جبلية','حماية قافلة ريفية','استعادة مركز تموين','تأمين طريق الظهرة','إجلاء الجرحى','حماية نقطة اتصال','فتح طريق جبلي','تأمين معبر الوادي','حماية المخيم','السيطرة على المرتفع'],
+ ['حماية بئر الواحة','تأمين قافلة الجنوب','استعادة مخزن الوقود','حراسة ممر صحراوي','إنقاذ دورية تائهة','تأمين نقطة ماء','حماية طريق القوافل','استعادة محطة اتصال','تأمين الواحة','فتح طريق الإمداد'],
+ ['رصد خط الحدود','تأمين معبر جبلي','حماية شبكة الإمداد','استعادة نقطة مراقبة','إجلاء مجموعة','تأمين طريق ليلي','حماية مركز اتصال','فتح ممر حدودي','تأمين القافلة','الانسحاب المنظم'],
+ ['حماية تجمع شعبي','تأمين الهضبة','استعادة مركز تموين','حماية طريق البلدة','إجلاء المدنيين','تأمين نقطة طبية','حراسة الممر','حماية شبكة الاتصال','تأمين القافلة','فتح الطريق'],
+ ['تأمين الطريق الساحلي','حماية الميناء','استعادة مركز اتصال','إجلاء مجموعة','تأمين الحي القديم','حماية قافلة الإمداد','تأمين محطة النقل','حراسة الممر الساحلي','حماية اجتماع','فتح طريق آمن'],
+ ['حماية وقف إطلاق النار','تأمين طريق العودة','حماية المدنيين','تأمين مركز المدينة','استعادة آخر نقطة اتصال','حراسة قافلة العودة','فتح الطريق للمدنيين','رفع العلم في البلدة','تأمين الساحة','إعلان الاستقلال']
+];
+const campaignStageTitle = (stage:number) => campaignOperations[Math.floor((stage-1)/10)][(stage-1)%10];
+const campaignChapter = (stage:number) => campaignChapters[Math.floor((stage-1)/10)];
+function buildChapterLandmark(index:number, sector:{x:number;z:number}):void {
+  const g=new THREE.Group(); const chapter=campaignChapters[index];
+  const stone=new THREE.MeshStandardMaterial({color:index===3||index===8?0x8a8275:0x776e5a,roughness:1});
+  const wood=new THREE.MeshStandardMaterial({color:0x59452f,roughness:1});
+  if(chapter.kind==='desert'){
+    for(let i=0;i<7;i++){const dune=new THREE.Mesh(new THREE.SphereGeometry(12+i%3*3,12,8),new THREE.MeshStandardMaterial({color:i%2?0xb79b68:0xc2a875,roughness:1}));dune.position.set(-38+i*13,-8,-58-(i%2)*14);dune.scale.set(1,.22,1.4);g.add(dune);}
+    for(let i=0;i<5;i++){const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.22,.38,5,7),wood);trunk.position.set(24+i*3,2,-42-i%2*7);g.add(trunk);const crown=new THREE.Mesh(new THREE.ConeGeometry(2.4,4,7),new THREE.MeshStandardMaterial({color:0x596b3d}));crown.position.set(24+i*3,6,-42-i%2*7);g.add(crown);}
+  } else if(chapter.kind==='city'||chapter.kind==='coast'||chapter.kind==='village'){
+    const count=chapter.kind==='city'?12:7;
+    for(let i=0;i<count;i++){const w=4+(i%3)*2,h=4+(i%4)*1.5;const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,4+(i%2)*2),stone);b.position.set(-38+(i%4)*13,h/2,-65-Math.floor(i/4)*12);b.castShadow=true;g.add(b);const roof=new THREE.Mesh(new THREE.BoxGeometry(w+.3,.22,4.3),wood);roof.position.set(b.position.x,h+.1,b.position.z);g.add(roof);const door=new THREE.Mesh(new THREE.BoxGeometry(.9,1.8,.12),new THREE.MeshStandardMaterial({color:0x493a2c}));door.position.set(b.position.x,h/2-.9,b.position.z+2.08);g.add(door);}
+  } else if(chapter.kind==='border'){
+    for(let row=0;row<3;row++){for(let i=0;i<14;i++){const post=new THREE.Mesh(new THREE.CylinderGeometry(.07,.09,2.3,5),wood);post.position.set(-38+i*5,1.15,-62+row*2.2);g.add(post);}const wire=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,68,5),new THREE.MeshStandardMaterial({color:0x8b8b82,metalness:.65}));wire.rotation.z=Math.PI/2;wire.position.set(-5,1.35+row*.35,-62+row*2.2);g.add(wire);}}
+  } else if(chapter.kind==='forest'){
+    for(let i=0;i<18;i++){const x=-42+(i%6)*15,z=-66-Math.floor(i/6)*12;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.22,.32,5,7),wood);trunk.position.set(x,2.5,z);g.add(trunk);const crown=new THREE.Mesh(new THREE.ConeGeometry(3,8,7),new THREE.MeshStandardMaterial({color:0x40583b}));crown.position.set(x,7,z);g.add(crown);}
+  } else {
+    for(let i=0;i<10;i++){const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(3+(i%3),1),stone);rock.position.set(-42+(i%5)*19,1,-66-Math.floor(i/5)*19);rock.scale.y=1.4;g.add(rock);}
+  }
+  g.position.set(sector.x,0,sector.z);scene.add(g);
+}
+campaignSectors.forEach((sector,index)=>buildChapterLandmark(index,sector));
 for (const [index, sector] of campaignSectors.entries()) {
   addStoneOutpost(sector.x + 22, sector.z - 30, index * 0.17);
   addSandbagLine(sector.x - 13, sector.z - 24, 7 + (index % 3), -0.12);
@@ -756,13 +800,21 @@ function updateHud(): void {
 
 function updateCampaignHeader(): void {
   const sector = campaignSector(campaignStage);
-  $('#stage-label').textContent = `المرحلة ${campaignStage} / 100 · ${sector.name}`;
+  const chapter = campaignChapter(campaignStage);
+  $('#stage-label').textContent = `المرحلة ${campaignStage} / 100 · ${chapter.year}`;
   $('#mission-title').textContent = campaignStageTitle(campaignStage);
-  $('#mission-status').textContent = `القطاع: ${sector.name} · المهمة ${campaignStage} من 100`;
+  $('#mission-description').textContent = chapter.description + ' · ' + chapter.title;
+  $('#mission-status').textContent = `المنطقة: ${sector.name} · ${chapter.year} · المهمة ${campaignStage}/100`;
+  const chapterLabel=$('#chapter-label'); if(chapterLabel) chapterLabel.textContent=chapter.title;
 }
 function configureCampaignStage(): void {
   const sector = campaignSector(campaignStage);
   const base = new THREE.Vector3(sector.x,0,sector.z);
+  const chapter=campaignChapter(campaignStage);
+  scene.background = new THREE.Color(chapter.sky);
+  scene.fog = new THREE.Fog(chapter.fog, chapter.kind==='desert'?420:300, chapter.kind==='city'?1250:1600);
+  (terrain.material as THREE.MeshStandardMaterial).color.setHex(chapter.terrain);
+  sun.intensity = chapter.kind==='desert'?2.65:chapter.kind==='city'?1.75:2.2;
   player.position.copy(base).add(new THREE.Vector3(0,0,18));
   allies.forEach((ally,index) => {
     const offsets=[new THREE.Vector3(-2.2,0,4),new THREE.Vector3(2.2,0,4),new THREE.Vector3(0,0,6.5)];
@@ -1436,7 +1488,8 @@ function animate(): void {
         const nextButton = $('#victory-next') as HTMLButtonElement;
         nextButton.textContent = campaignStage >= 100 ? 'إنهاء الحملة' : 'المرحلة التالية ←';
         nextButton.disabled = campaignStage >= 100;
-        $('#victory-heading').textContent = campaignStage >= 100 ? 'اكتملت حملة التحرير' : `اكتملت المرحلة ${campaignStage} من 100`;
+        $('#victory-heading').textContent = campaignStage >= 100 ? 'تحررت الجزائر · 5 جويلية 1962' : `اكتملت المرحلة ${campaignStage} من 100`;
+        const victoryCopy=$('#victory-copy'); if(victoryCopy) victoryCopy.textContent=campaignStage>=100?'بعد 100 مهمة وصلت الحملة إلى الاستقلال. المجد للشهداء.':'تم تأمين القطاع. استعد للمهمة التالية في منطقة وزمن مختلفين.';
         updateHud();
         notify('Mission accomplie !');
       }
