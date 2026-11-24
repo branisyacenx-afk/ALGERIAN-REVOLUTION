@@ -699,7 +699,7 @@ let reserveAmmo = 48;
 let reloading = false;
 let fireHoldTimer: number | null = null;
 let missionDone = false;
-let campaignStage = Math.max(1, Math.min(5, Number(localStorage.getItem('algerian-revolution-stage') || 1)));
+let campaignStage = Math.max(1, Math.min(100, Number(localStorage.getItem('algerian-revolution-stage') || 1)));
 const campaignSectors = [
   { name:'جبال الأوراس', x:0, z:-25 },
   { name:'ممرات القبائل', x:170, z:-120 },
@@ -887,10 +887,54 @@ function configureCampaignStage(): void {
   flagGroup.position.copy(base).add(new THREE.Vector3(-8,0,-38));
   missionDone = false; suppliesCollected = false;
   goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false;
-  const count = Math.min(12, 6 + Math.floor((campaignStage-1)/2));
+  // Shape the ground to the chapter: mountains, dunes and plateaus are not just color swaps.
+  const terrainGeometry = terrain.geometry as THREE.PlaneGeometry;
+  const terrainPositions = terrainGeometry.attributes.position as THREE.BufferAttribute;
+  const stageVariant = (campaignStage - 1) % 10;
+  for (let v = 0; v < terrainPositions.count; v++) {
+    const lx = terrainPositions.getX(v) - base.x;
+    const lz = -terrainPositions.getY(v) - base.z;
+    const distance = Math.sqrt(lx * lx + lz * lz);
+    let elevation = 0;
+    if (chapter.kind === 'mountain' || chapter.kind === 'ridge' || chapter.kind === 'forest' || chapter.kind === 'plateau') {
+      elevation = Math.max(0, Math.sin(lx * 0.027 + stageVariant) * 5 + Math.cos(lz * 0.021) * 4 + Math.sin((lx + lz) * 0.012) * 7);
+      if (chapter.kind === 'plateau') elevation = Math.max(0, elevation * 0.55 + 2.5);
+    } else if (chapter.kind === 'desert') {
+      elevation = Math.max(0, Math.sin(lx * 0.035 + stageVariant * 0.7) * 2.5 + Math.sin(lz * 0.018) * 5);
+    } else if (chapter.kind === 'coast') {
+      elevation = Math.sin(lx * 0.018) * 1.5 + Math.cos(lz * 0.022) * 1.2;
+    } else if (chapter.kind === 'border') {
+      elevation = Math.max(0, Math.sin(lx * 0.012) * 2.5 + Math.cos(lz * 0.015) * 2);
+    }
+    const falloff = THREE.MathUtils.clamp(1 - distance / 720, 0, 1);
+    terrainPositions.setZ(v, elevation * falloff);
+  }
+  terrainPositions.needsUpdate = true;
+  terrainGeometry.computeVertexNormals();
+
+  const count = Math.min(42, 24 + Math.floor((campaignStage - 1) / 3));
   resetEnemies(count, base);
+  // Keep both friendly groups in separate, irregular defensive positions; neither trails the player.
+  allies.forEach((ally, index) => {
+    const spots = [[-10, 8], [10, 11], [-3, 18]];
+    ally.position.set(base.x + spots[index][0], 0, base.z + spots[index][1]);
+    ally.rotation.y = (index - 1) * 0.28;
+  });
+  battleAllies.forEach((ally, index) => {
+    const side = index % 2 === 0 ? -1 : 1;
+    const row = Math.floor(index / 2);
+    ally.position.set(base.x + side * (13 + (row % 2) * 5), 0, base.z + 5 + row * 5);
+    ally.rotation.y = side * 0.18;
+  });
   updateCampaignHeader();
   updateHud();
+}
+function chapterForEnemyPalette(stage: number): number[] {
+  const kind = campaignChapter(stage).kind;
+  if (kind === 'desert') return [0x9a805e, 0x776c54, 0x6f765f, 0x8b8068];
+  if (kind === 'city' || kind === 'coast' || kind === 'village') return [0x46586b, 0x59616a, 0x6b6258, 0x4d5a62];
+  if (kind === 'border') return [0x77786d, 0x59614a, 0x6b6b60, 0x4b554d];
+  return [0x59614a, 0x687052, 0x77715e, 0x4d5948];
 }
 function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
   for (const enemy of enemies) {
@@ -903,8 +947,25 @@ function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
   for (let i = 0; i < count; i++) {
     const enemy = makePerson(0x55594e, 0.95);
     if (soldierTemplate) attachSoldierModel(enemy, 0x858b7b);
-    enemy.position.set(base.x + (i - (count - 1) / 2) * 4.4, 0, base.z - 15 - (i % 3) * 5);
-    enemy.userData.health = 2;
+    // Three staggered enemy groups approach from different bearings, not a single firing line.
+    const platoon = i % 3;
+    const slot = Math.floor(i / 3);
+    const angle = [-0.72, 0, 0.72][platoon] + Math.sin(i * 2.17 + campaignStage) * 0.13;
+    const radius = 28 + slot * 5.4 + ((i * 7) % 4) * 2.2;
+    const spread = Math.sin(i * 1.91 + campaignStage * 0.7) * 5.5;
+    enemy.position.set(
+      base.x + Math.sin(angle) * radius + spread,
+      0,
+      base.z - Math.cos(angle) * radius - ((i * 11) % 17)
+    );
+    const enemyPalettes = chapterForEnemyPalette(campaignStage);
+    const paletteColor = enemyPalettes[i % enemyPalettes.length];
+    enemy.traverse((part) => {
+      if (part instanceof THREE.Mesh && part.material instanceof THREE.MeshStandardMaterial) {
+        part.material.color.setHex(paletteColor);
+      }
+    });
+    enemy.userData.health = i % 7 === 0 ? 3 : 2;
     const bar = new THREE.Group();
     const barBack = new THREE.Mesh(new THREE.PlaneGeometry(0.9,0.09),new THREE.MeshBasicMaterial({color:0x241c18,side:THREE.DoubleSide}));
     const barFill = new THREE.Mesh(new THREE.PlaneGeometry(0.84,0.055),new THREE.MeshBasicMaterial({color:0x8fc36b,side:THREE.DoubleSide}));
@@ -1592,11 +1653,8 @@ function animate(): void {
   });
   battleAllies.forEach((ally,i)=>{
     if(!started||paused||gameOver)return;
-    const angle=player.rotation.y+(i%2?-.75:.75);
-    const row=Math.floor(i/2)+2;
-    const target=player.position.clone().add(new THREE.Vector3(Math.sin(angle)*row,0,Math.cos(angle)*row));
-    ally.position.lerp(target,Math.min(1,delta*1.8));
-    if(ally.position.distanceTo(target)>.9)setCharacterAnimation(ally,'Run');else setCharacterAnimation(ally,'Idle');
+    // Squad members stay spread across the local defensive line and engage targets from cover.
+    setCharacterAnimation(ally, 'Idle');
     const foe=enemies.reduce<THREE.Group|undefined>((best,e)=>!best||e.position.distanceTo(ally.position)<best.position.distanceTo(ally.position)?e:best,undefined);
     ally.userData.squadFire=(ally.userData.squadFire||.5)-delta;
     if(foe&&foe.position.distanceTo(ally.position)<38&&ally.userData.squadFire<=0){
@@ -1658,22 +1716,17 @@ function animate(): void {
       stamina = THREE.MathUtils.clamp(stamina + 24 * delta, 0, 100);
       player.traverse((part) => { if (part instanceof THREE.Mesh && part.userData.motionRole) part.rotation.x *= Math.max(0, 1 - delta * 8); });
     }
-    allies.forEach((ally,index) => {
-      const offsets=[new THREE.Vector3(-2.2,0,4),new THREE.Vector3(2.2,0,4),new THREE.Vector3(0,0,6.5)];
-      const target=offsets[index].applyAxisAngle(new THREE.Vector3(0,1,0),player.rotation.y).add(player.position);
-      const gap=ally.position.distanceTo(target);
-      ally.position.lerp(target,Math.min(1,delta*3.8));
-      ally.rotation.y=player.rotation.y;
-      setCharacterAnimation(ally,gap>1.25?'Run':'Idle');
-    });
+    // Friendly riflemen hold their assigned cover positions instead of forming a queue behind the player.
+    allies.forEach((ally) => setCharacterAnimation(ally, 'Idle'));
     $('#stamina-value').textContent = `${Math.round(stamina)}%`;
     $('#stamina-meter').style.width = `${stamina}%`;
     if (keys.has('Space') && onGround) { verticalVelocity = 6.2; onGround = false; }
     verticalVelocity -= 17 * delta;
     player.position.y += verticalVelocity * delta;
     if (player.position.y <= 0) { player.position.y = 0; verticalVelocity = 0; onGround = true; }
-    player.position.x = THREE.MathUtils.clamp(player.position.x, -195, 195);
-    player.position.z = THREE.MathUtils.clamp(player.position.z, -195, 175);
+    const activeSector = campaignSector(campaignStage);
+    player.position.x = THREE.MathUtils.clamp(player.position.x, activeSector.x - 195, activeSector.x + 195);
+    player.position.z = THREE.MathUtils.clamp(player.position.z, activeSector.z - 195, activeSector.z + 175);
     if (crouching && !isPlayerInCover()) { crouching = false; playerHidden = false; player.scale.y = 1; $('#hide-button').classList.remove('active'); $('#hide-button').textContent = 'اختباء'; notify('Vous avez quitté la zone de couverture.'); }
     else playerHidden = crouching && isPlayerInCover();
 
