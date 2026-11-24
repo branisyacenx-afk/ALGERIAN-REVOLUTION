@@ -683,3 +683,42 @@ body.game-started #mobile-controls{display:flex!important}
 /* Hard hide/show state for the menu: [hidden] wins over legacy mobile !important rules. */
 #start-screen[hidden]{display:none!important;visibility:hidden!important;pointer-events:none!important}
 #start-screen:not([hidden]){visibility:visible;pointer-events:auto}
+
+
+/* Strict layer ordering and safe hidden overlays */
+#game-root,#game-root canvas{position:absolute!important;inset:0;z-index:1!important}
+#hud{position:absolute;inset:0;z-index:10!important;pointer-events:none}
+#hud button,#hud input,#hud select,#mobile-controls{pointer-events:auto}
+#mobile-controls{z-index:20!important}
+#start-screen{z-index:30!important}
+#mission-cinematic{z-index:40!important}
+#pause-screen,#victory-screen{z-index:50!important}
+#start-screen[hidden],#mission-cinematic:not(.visible),#pause-screen:not(.visible),#victory-screen:not(.visible){display:none!important;visibility:hidden!important;pointer-events:none!important}
+#start-screen[hidden] *,#mission-cinematic:not(.visible) *,#pause-screen:not(.visible) *,#victory-screen:not(.visible) *{pointer-events:none!important}
+.keyboard-hints{display:block}
+@media(pointer:coarse){.keyboard-hints{display:none!important}}
+#objective-tracker{position:absolute;top:116px;left:50%;transform:translateX(-50%);z-index:11;display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #d5b87877;border-radius:12px;background:#101914e8;color:#f4ead2;font:700 11px/1.3 Arial,sans-serif;box-shadow:0 5px 18px #0007;pointer-events:none;white-space:nowrap}
+#objective-tracker strong{color:#e8c77e}
+#objective-tracker span{padding-inline:7px;border-inline-start:1px solid #d5b87855}
+#damage-flash{z-index:12!important;box-shadow:inset 0 0 70px 14px #a20f0f55}
+.chapter-locked{opacity:.48;filter:grayscale(.7);position:relative}
+.chapter-locked small:after{content:"";display:block}
+@media(max-width:900px){
+ #objective-tracker{top:88px;max-width:calc(100vw - 18px);gap:4px;padding:6px 7px;font-size:9px;white-space:normal}
+ #radar-panel{left:8px;top:8px;transform:scale(.72);transform-origin:top left}
+ .mission{right:8px;top:8px;max-width:43vw}
+ .bottom-hud{left:10px;right:10px;bottom:104px}
+ #mobile-controls{bottom:max(8px,env(safe-area-inset-bottom))!important;left:8px!important;right:8px!important}
+ .mobile-actions{grid-template-columns:repeat(3,minmax(40px,48px))!important;grid-template-rows:repeat(2,48px)!important;gap:4px!important}
+ .mobile-actions button{width:42px!important;height:42px!important}
+ .mobile-actions #fire-button{width:52px!important;height:52px!important}
+ #joystick{width:90px!important;height:90px!important;flex-basis:90px!important}
+}
+@media(max-height:480px) and (orientation:landscape){
+ #radar-panel{transform:scale(.66);transform-origin:top left;top:5px;left:5px}
+ .mission{top:5px;right:7px;padding:6px 8px;max-width:38vw}
+ .bottom-hud{bottom:94px;transform:scale(.84);transform-origin:bottom left}
+ #objective-tracker{top:6px;left:50%;gap:4px;padding:5px 6px;font-size:9px}
+ #mobile-controls{bottom:5px!important;left:7px!important;right:7px!important}
+ #camera-zoom-controls{right:7px!important;top:39%!important}
+}
