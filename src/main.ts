@@ -459,7 +459,8 @@ for (let i = 0; i < 6; i++) {
   const enemy = makePerson(0x55594e, 0.95);
   enemy.position.set((i - 1.5) * 5.5, 0, -15 - (i % 2) * 5);
   enemy.userData.health = 2;
-  enemy.userData.fireCooldown = 1.2 + i * 0.35;
+  enemy.userData.fireCooldown = 1.0 + i * 0.18;
+    enemy.userData.role = i % 6 === 0 ? 'sniper' : 'rifle';
   enemy.userData.patrolX = enemy.position.x;
   enemy.userData.patrolZ = enemy.position.z;
   enemy.userData.patrolPhase = i * 1.7;
@@ -581,6 +582,7 @@ async function loadSoldierCharacters(): Promise<void> {
     });
     attachSoldierModel(player, 0x9aa184);
     allies.forEach((ally) => attachSoldierModel(ally, 0x687957));
+    battleAllies.forEach((ally) => attachSoldierModel(ally, 0x687957));
     const factionTints = [0x858b7b, 0x777f70, 0x9a927c, 0x6f796d, 0x8d8877, 0x727a80];
     for (const [index, enemy] of enemies.entries()) {
       attachSoldierModel(enemy, factionTints[index % factionTints.length]);
@@ -774,7 +776,7 @@ function configureCampaignStage(): void {
   flagGroup.position.copy(base).add(new THREE.Vector3(-8,0,-38));
   missionDone = false; suppliesCollected = false;
   goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false;
-  const count = Math.min(13, 4 + Math.floor((campaignStage-1)/9));
+  const count = Math.min(24, 8 + Math.floor((campaignStage-1)/4));
   resetEnemies(count, base);
   updateCampaignHeader();
   updateHud();
@@ -787,7 +789,7 @@ function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
   }
   enemies.length = 0;
   enemyMeshes.length = 0;
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < count; i++) {
     const enemy = makePerson(0x55594e, 0.95);
     if (soldierTemplate) attachSoldierModel(enemy, 0x858b7b);
     enemy.position.set((i - 1.5) * 5.5, 0, -15 - (i % 2) * 5);
@@ -982,7 +984,7 @@ function getAimedEnemy(): THREE.Group | undefined {
     const targetPoint = enemy.position.clone().add(new THREE.Vector3(0, 1.15, 0));
     const toTarget = targetPoint.sub(origin);
     const distance = toTarget.length();
-    if (distance > 62 || distance < 0.1) continue;
+    if (distance > 95 || distance < 0.1) continue;
     const alignment = view.dot(toTarget.normalize());
     // A forgiving 18-degree cone replaces the brittle exact-pixel-only hit test.
     if (alignment < 0.95) continue;
@@ -1026,6 +1028,7 @@ function shoot(): void {
         notify('Cible touchée ! Tirez encore pour la neutraliser.');
       } else {
         target.userData.dead = true;
+        awardCombatPoint();
         const mixer = target.userData.characterMixer as THREE.AnimationMixer | undefined;
         mixer?.stopAllAction();
         const index = enemies.indexOf(target);
@@ -1168,10 +1171,169 @@ function drawRadar(): void {
   ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(6, 7); ctx.lineTo(0, 4); ctx.lineTo(-6, 7); ctx.closePath(); ctx.fill(); ctx.stroke();
   ctx.restore();
 }
+
+// ===== BATTLEFIELD EXPANSION: squads, convoy, horse patrols, aircraft, trenches and grenades =====
+type GrenadeState = { mesh: THREE.Group; velocity: THREE.Vector3; fuse: number };
+const grenades: GrenadeState[] = [];
+const battleAllies: THREE.Group[] = [];
+let grenadeCount = 3;
+let rankPoints = Number(localStorage.getItem('ar-rank-points') || 0);
+const rankNames = ['مجند','جندي','جندي أول','عريف','رقيب','رقيب أول','مساعد','ملازم','نقيب','رائد','عقيد'];
+const rankIndex = () => Math.min(rankNames.length - 1, Math.floor(rankPoints / 8));
+const rankPanel = document.createElement('div');
+rankPanel.id = 'battle-rank-panel';
+rankPanel.style.cssText = 'position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:25;padding:7px 13px;border:1px solid #d5bd82aa;border-radius:12px;background:#101a15dd;color:#f6e8c4;font:700 12px Arial;direction:rtl;pointer-events:none;text-align:center;min-width:132px;box-shadow:0 4px 16px #0008';
+rankPanel.innerHTML = '<div>الرتبة: <b id="battle-rank-name">مجند</b></div><small id="battle-rank-progress">0 / 8 نقاط · قنابل 3</small>';
+root.appendChild(rankPanel);
+function updateRankHud(): void {
+  const name = rankNames[rankIndex()];
+  const progress = rankIndex() === rankNames.length - 1 ? 8 : rankPoints % 8;
+  const n = rankPanel.querySelector('#battle-rank-name');
+  const p = rankPanel.querySelector('#battle-rank-progress');
+  if (n) n.textContent = name;
+  if (p) p.textContent = progress + ' / 8 نقاط · قنابل ' + grenadeCount;
+}
+function awardCombatPoint(): void {
+  rankPoints += 1;
+  localStorage.setItem('ar-rank-points', String(rankPoints));
+  updateRankHud();
+  if (rankPoints % 8 === 0) notify('ترقية جديدة: ' + rankNames[rankIndex()]);
+}
+function addFieldTent(x:number,z:number,rotation=0):void {
+  const g=new THREE.Group();
+  const canvas=document.createElement('canvas'); canvas.width=128; canvas.height=128;
+  const c=canvas.getContext('2d')!; c.fillStyle='#9a8964'; c.fillRect(0,0,128,128);
+  for(let i=0;i<128;i+=12){c.strokeStyle='#74684f';c.lineWidth=2;c.beginPath();c.moveTo(i,0);c.lineTo(i,128);c.stroke();}
+  const mat=new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(canvas),side:THREE.DoubleSide,roughness:1});
+  const roof=new THREE.Mesh(new THREE.ConeGeometry(4.1,3.1,4),mat); roof.position.y=2.15; roof.rotation.y=Math.PI/4; roof.scale.set(1,1,0.82); roof.castShadow=true; g.add(roof);
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(3.1,3.1,0.22,4),new THREE.MeshStandardMaterial({color:0x665943})); base.position.y=.12; g.add(base);
+  const flap=new THREE.Mesh(new THREE.PlaneGeometry(1.45,1.8),mat); flap.position.set(0,1.05,2.75); flap.rotation.y=Math.PI; g.add(flap);
+  g.position.set(x,0,z);g.rotation.y=rotation;scene.add(g);
+}
+function addTrench(x:number,z:number,length:number,rotation=0):void {
+  const g=new THREE.Group();
+  const earth=new THREE.MeshStandardMaterial({color:0x625640,roughness:1});
+  const inner=new THREE.MeshStandardMaterial({color:0x29291f,roughness:1});
+  const pit=new THREE.Mesh(new THREE.BoxGeometry(length,0.85,2.5),inner); pit.position.y=-.34;g.add(pit);
+  for(let s of [-1,1]) {
+    const berm=new THREE.Mesh(new THREE.BoxGeometry(length,1.05,.9),earth);berm.position.set(0,.2,s*1.55);berm.castShadow=true;g.add(berm);
+    for(let i=0;i<Math.floor(length/2);i++){const bag=new THREE.Mesh(new THREE.CapsuleGeometry(.24,.62,3,6),new THREE.MeshStandardMaterial({color:0x9a8969}));bag.rotation.z=Math.PI/2;bag.position.set(-length/2+1+i*2,.8,s*1.55);g.add(bag);}
+  }
+  g.position.set(x,0,z);g.rotation.y=rotation;scene.add(g);
+  coverZones.push({position:new THREE.Vector3(x,0,z),radius:length*.48+2});
+}
+function addCaveMouth(x:number,z:number):void {
+  const g=new THREE.Group(); const rockMat=new THREE.MeshStandardMaterial({color:0x514f43,roughness:1,flatShading:true});
+  const arch=new THREE.Mesh(new THREE.TorusGeometry(3.2,.95,8,12,Math.PI),rockMat);arch.position.y=2.25;arch.rotation.z=Math.PI;g.add(arch);
+  const dark=new THREE.Mesh(new THREE.CircleGeometry(2.45,16),new THREE.MeshBasicMaterial({color:0x10110e,side:THREE.DoubleSide}));dark.position.set(0,2.05,-.15);g.add(dark);
+  for(let s of [-1,1]){const side=new THREE.Mesh(new THREE.DodecahedronGeometry(2.1,1),rockMat);side.position.set(s*2.5,1.0,0);side.scale.set(.8,1.2,1.2);g.add(side);}
+  g.position.set(x,0,z);scene.add(g);coverZones.push({position:new THREE.Vector3(x,0,z),radius:6});
+}
+function addTruck(x:number,z:number,rotation:number):THREE.Group {
+  const g=new THREE.Group(); const green=new THREE.MeshStandardMaterial({color:0x59604a,roughness:.9});const rubber=new THREE.MeshStandardMaterial({color:0x20211f,roughness:1});
+  const cab=new THREE.Mesh(new THREE.BoxGeometry(2.5,1.8,2.1),green);cab.position.set(0,1.55,-2.0);g.add(cab);
+  const windshield=new THREE.Mesh(new THREE.BoxGeometry(2.15,.68,.08),new THREE.MeshStandardMaterial({color:0x273638,metalness:.2,roughness:.25}));windshield.position.set(0,1.95,-3.08);g.add(windshield);
+  const bed=new THREE.Mesh(new THREE.BoxGeometry(2.8,1.15,4.1),green);bed.position.set(0,1.25,1.05);g.add(bed);
+  const canvas=new THREE.Mesh(new THREE.BoxGeometry(2.9,1.65,4.15),new THREE.MeshStandardMaterial({color:0x8b805f,roughness:1,side:THREE.DoubleSide}));canvas.position.set(0,2.55,1.05);g.add(canvas);
+  for(const sx of [-1,1])for(const zz of [-2.35,1.65]){const w=new THREE.Mesh(new THREE.CylinderGeometry(.62,.62,.34,14),rubber);w.rotation.z=Math.PI/2;w.position.set(sx*1.34,.68,zz);g.add(w);}
+  g.position.set(x,0,z);g.rotation.y=rotation;g.traverse(o=>{if(o instanceof THREE.Mesh){o.castShadow=true;o.receiveShadow=true;}});scene.add(g);return g;
+}
+const convoy:THREE.Group[]=[];
+convoy.push(addTruck(22,-54,-.18),addTruck(30,-61,-.18),addTruck(38,-68,-.18));
+function addHorse(x:number,z:number,rotation:number):THREE.Group {
+  const g=new THREE.Group();const coat=new THREE.MeshStandardMaterial({color:0x694a32,roughness:1});const dark=new THREE.MeshStandardMaterial({color:0x29231d,roughness:1});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(.95,1.0,2.0),coat);body.position.y=1.45;g.add(body);
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.27,.42,1.2,8),coat);neck.position.set(0,2.05,-.78);neck.rotation.x=-.45;g.add(neck);
+  const head=new THREE.Mesh(new THREE.BoxGeometry(.42,.58,.7),coat);head.position.set(0,2.55,-1.28);g.add(head);
+  const mane=new THREE.Mesh(new THREE.BoxGeometry(.18,.82,.34),dark);mane.position.set(0,2.45,-.72);g.add(mane);
+  for(const sx of [-.32,.32])for(const zz of [-.72,.72]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(.09,.13,1.0,7),coat);leg.position.set(sx,.58,zz);leg.name='horse-leg';g.add(leg);const hoof=new THREE.Mesh(new THREE.BoxGeometry(.2,.18,.24),dark);hoof.position.set(sx,.12,zz);g.add(hoof);}
+  g.position.set(x,0,z);g.rotation.y=rotation;g.traverse(o=>{if(o instanceof THREE.Mesh){o.castShadow=true;o.receiveShadow=true;}});scene.add(g);return g;
+}
+const horses=[addHorse(-23,-48,.35),addHorse(-27,-51,.35)];
+const aircraft=new THREE.Group();
+const planeMat=new THREE.MeshStandardMaterial({color:0x626c5b,metalness:.2,roughness:.8});
+const fuselage=new THREE.Mesh(new THREE.CylinderGeometry(.48,.58,9,12),planeMat);fuselage.rotation.x=Math.PI/2;aircraft.add(fuselage);
+const wing=new THREE.Mesh(new THREE.BoxGeometry(13,.18,2.1),planeMat);aircraft.add(wing);
+const tail=new THREE.Mesh(new THREE.BoxGeometry(4,.15,1.1),planeMat);tail.position.z=3.5;aircraft.add(tail);
+const fin=new THREE.Mesh(new THREE.BoxGeometry(.16,1.2,1.4),planeMat);fin.position.set(0,.58,3.55);aircraft.add(fin);
+const propeller=new THREE.Mesh(new THREE.BoxGeometry(.12,2.4,.16),new THREE.MeshStandardMaterial({color:0x252724}));propeller.position.z=-4.7;aircraft.add(propeller);
+aircraft.position.set(-95,55,-120);aircraft.rotation.y=-.45;aircraft.traverse(o=>{if(o instanceof THREE.Mesh)o.castShadow=true;});scene.add(aircraft);
+addFieldTent(-17,-47,.2);addFieldTent(-8,-51,-.2);addFieldTent(16,-92,.5);
+addTrench(-25,-31,19,.18);addTrench(34,-112,24,-.4);addCaveMouth(47,-86);
+addArmoredTank(-16,-82,.2,0x59614a,2.8);
+const battleSniperPositions=[[-42,-38],[44,-57],[57,-101],[-52,-119]];
+for(let i=0;i<battleSniperPositions.length;i++){
+  const [x,z]=battleSniperPositions[i];
+  const post=makePerson(0x4b5547,.94);post.position.set(x,0,z);post.userData.health=3;post.userData.fireCooldown=2+i*.5;post.userData.patrolX=x;post.userData.patrolZ=z;post.userData.patrolPhase=i*2;post.userData.role='sniper';scene.add(post);enemies.push(post);
+  if(soldierTemplate)attachSoldierModel(post,0x7f8976);
+  post.traverse(part=>{if(part instanceof THREE.Mesh)enemyMeshes.push(part);});
+}
+for(let i=0;i<10;i++){
+  const ally=makePerson(0x354c3b,.94);ally.position.set((i-4.5)*2.2,0,13+(i%3)*2);ally.userData.squadIndex=i;
+  scene.add(ally);battleAllies.push(ally);if(soldierTemplate)attachSoldierModel(ally,0x687957);
+}
+let battleTime=0;
+function createGrenade():void {
+  if(!started||paused||gameOver||grenadeCount<=0){notify(grenadeCount<=0?'لا توجد قنابل متبقية.':'');return;}
+  grenadeCount--;updateRankHud();
+  const g=new THREE.Group();const shell=new THREE.Mesh(new THREE.SphereGeometry(.22,12,10),new THREE.MeshStandardMaterial({color:0x526047,metalness:.25,roughness:.7}));g.add(shell);
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.12,8),new THREE.MeshStandardMaterial({color:0x252821}));cap.position.y=.22;g.add(cap);
+  g.position.copy(player.position).add(new THREE.Vector3(0,1.35,0));
+  const dir=new THREE.Vector3(Math.sin(yaw),.42,-Math.cos(yaw)).normalize();
+  scene.add(g);grenades.push({mesh:g,velocity:dir.multiplyScalar(13).add(new THREE.Vector3(0,3,0)),fuse:2.1});
+  notify('تم رمي القنبلة!');
+}
+document.addEventListener('keydown',e=>{if(e.code==='KeyG'&&!e.repeat)createGrenade();});
+const grenadeButton=document.createElement('button');grenadeButton.id='battle-grenade-button';grenadeButton.textContent='قنبلة G';
+grenadeButton.style.cssText='position:absolute;right:14px;bottom:118px;z-index:35;padding:11px 14px;border:1px solid #e6d09a;border-radius:13px;background:#493a24ee;color:#fff1ce;font:800 12px Arial;touch-action:manipulation';
+grenadeButton.addEventListener('click',createGrenade);root.appendChild(grenadeButton);
+updateRankHud();
+
 function animate(): void {
   requestAnimationFrame(animate);
   const delta = Math.min(clock.getDelta(), 0.04);
   const time = clock.elapsedTime;
+  battleTime += delta;
+  aircraft.position.x = -95 + Math.sin(time * .12) * 130;
+  aircraft.position.z = -120 + Math.cos(time * .12) * 95;
+  aircraft.rotation.z = Math.sin(time * .12) * .06;
+  propeller.rotation.z += delta * 32;
+  convoy.forEach((truck,i)=>{truck.position.x += Math.sin(time*.22+i*.6)*delta*.32;truck.position.z += delta*.42;});
+  horses.forEach((horse,i)=>{horse.position.x += Math.sin(time*.6+i)*delta*.18;horse.traverse(o=>{if(o instanceof THREE.Mesh&&o.name==='horse-leg')o.rotation.x=Math.sin(time*7+i)*.28;});});
+  grenades.forEach((g,index)=>{
+    g.fuse-=delta;g.velocity.y-=9.8*delta;g.mesh.position.addScaledVector(g.velocity,delta);
+    if(g.mesh.position.y<.22){g.mesh.position.y=.22;g.velocity.y=Math.abs(g.velocity.y)*.34;g.velocity.multiplyScalar(.72);}
+    g.mesh.rotation.x+=delta*5;g.mesh.rotation.z+=delta*4;
+    if(g.fuse<=0){
+      const center=g.mesh.position.clone();scene.remove(g.mesh);
+      const blast=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),new THREE.MeshBasicMaterial({color:0xff9b42,transparent:true,opacity:.72}));
+      blast.position.copy(center);scene.add(blast);
+      const smoke=new THREE.Mesh(new THREE.SphereGeometry(1.7,12,10),new THREE.MeshBasicMaterial({color:0x39352e,transparent:true,opacity:.42}));
+      smoke.position.copy(center);scene.add(smoke);
+      enemies.slice().forEach(enemy=>{if(enemy.position.distanceTo(center)<7){enemy.userData.health=Math.max(0,(enemy.userData.health as number)-2);if((enemy.userData.health as number)<=0){enemy.userData.dead=true;awardCombatPoint();const ix=enemies.indexOf(enemy);if(ix>=0)enemies.splice(ix,1);enemy.rotation.z=1.1;window.setTimeout(()=>{scene.remove(enemy);enemy.clear();},850);}}});
+      window.setTimeout(()=>{scene.remove(blast,smoke);blast.geometry.dispose();smoke.geometry.dispose();(blast.material as THREE.Material).dispose();(smoke.material as THREE.Material).dispose();},420);
+      grenades.splice(index,1);
+    }
+  });
+  battleAllies.forEach((ally,i)=>{
+    if(!started||paused||gameOver)return;
+    const angle=player.rotation.y+(i%2?-.75:.75);
+    const row=Math.floor(i/2)+2;
+    const target=player.position.clone().add(new THREE.Vector3(Math.sin(angle)*row,0,Math.cos(angle)*row));
+    ally.position.lerp(target,Math.min(1,delta*1.8));
+    if(ally.position.distanceTo(target)>.9)setCharacterAnimation(ally,'Run');else setCharacterAnimation(ally,'Idle');
+    const foe=enemies.reduce<THREE.Group|undefined>((best,e)=>!best||e.position.distanceTo(ally.position)<best.position.distanceTo(ally.position)?e:best,undefined);
+    ally.userData.squadFire=(ally.userData.squadFire||.5)-delta;
+    if(foe&&foe.position.distanceTo(ally.position)<38&&ally.userData.squadFire<=0){
+      ally.lookAt(foe.position.x,ally.position.y,foe.position.z);ally.rotation.y+=Math.PI;
+      const a=ally.position.clone().add(new THREE.Vector3(0,1.25,0)),b=foe.position.clone().add(new THREE.Vector3(0,1.1,0));
+      const geo=new THREE.BufferGeometry().setFromPoints([a,b]);const beam=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xc8d6a0,transparent:true,opacity:.62}));scene.add(beam);
+      window.setTimeout(()=>{scene.remove(beam);geo.dispose();(beam.material as THREE.Material).dispose();},90);
+      ally.userData.squadFire=1.7+Math.random()*1.1;
+      if(Math.random()>.42){foe.userData.health=Math.max(0,(foe.userData.health as number)-1);if((foe.userData.health as number)<=0){foe.userData.dead=true;awardCombatPoint();const ix=enemies.indexOf(foe);if(ix>=0)enemies.splice(ix,1);foe.rotation.z=1.0;window.setTimeout(()=>{scene.remove(foe);foe.clear();},900);}}
+    }
+  });
+
   for (const mixer of characterMixers) mixer.update(delta);
   damageCooldown = Math.max(0, damageCooldown - delta);
   radarElapsed += delta;
@@ -1290,16 +1452,17 @@ function animate(): void {
         setCharacterAnimation(enemy, 'Walk');
       }
       enemy.userData.fireCooldown = Math.max(0, (enemy.userData.fireCooldown as number) - delta);
-      if (!playerHidden && distance >= 7 && distance < 25 && enemy.userData.fireCooldown <= 0) {
+      const enemyRange = enemy.userData.role === 'sniper' ? 78 : 32;
+      if (!playerHidden && distance >= 7 && distance < enemyRange && enemy.userData.fireCooldown <= 0) {
         enemy.lookAt(player.position.x, enemy.position.y, player.position.z);
         enemy.rotation.y += Math.PI;
         const from = enemy.position.clone().add(new THREE.Vector3(0, 1.35, 0));
         const to = player.position.clone().add(new THREE.Vector3(0, 1.0, 0));
         const lineGeometry = new THREE.BufferGeometry().setFromPoints([from, to]);
-        const line = new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({color:0xd8a76c,transparent:true,opacity:0.7}));
+        const line = new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({color: enemy.userData.role === 'sniper' ? 0xff5c42 : 0xd8a76c,transparent:true,opacity:0.7}));
         scene.add(line);
         window.setTimeout(() => { scene.remove(line); lineGeometry.dispose(); (line.material as THREE.Material).dispose(); }, 120);
-        enemy.userData.fireCooldown = 2.8 + Math.random() * 1.1;
+        enemy.userData.fireCooldown = enemy.userData.role === 'sniper' ? 4.2 + Math.random() * 1.5 : 2.1 + Math.random() * 1.1;
         if (damageCooldown <= 0 && Math.random() > 0.35) {
           health = Math.max(0, health - 5);
           damageCooldown = 0.7;
