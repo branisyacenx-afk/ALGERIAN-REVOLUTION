@@ -3,6 +3,54 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import './style.css';
 
+ 
+// Install startup diagnostics before building the Three.js scene. A failed
+// module initialization should never leave a silent, unresponsive menu.
+let gameBootComplete = false;
+let launchAttemptTimer: number | null = null;
+function showStartupFailure(message: string): void {
+  const screen = document.querySelector<HTMLElement>('#start-screen');
+  if (!screen) return;
+  let panel = document.querySelector<HTMLElement>('#startup-error');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'startup-error';
+    panel.setAttribute('role','alert');
+    panel.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:100000;background:#351b18;color:#fff;padding:14px;border:1px solid #ff9b78;border-radius:12px;font:14px/1.7 Arial,sans-serif;text-align:center;direction:rtl;pointer-events:auto';
+    screen.appendChild(panel);
+  }
+  panel.textContent = message;
+}
+window.addEventListener('error', (event) => {
+  console.error('Game startup/runtime error:', event.error || event.message);
+  if (!gameBootComplete) showStartupFailure('تعذر تشغيل محرك اللعبة. أرسل صورة لهذه الرسالة حتى أحدد سبب العطل.');
+});
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Game startup promise rejected:', event.reason);
+  if (!gameBootComplete) showStartupFailure('حدث خطأ أثناء تحميل اللعبة. أعد المحاولة وأرسل صورة إذا تكرر.');
+});
+document.addEventListener('click', (event) => {
+  const target = event.target;
+  if (!(target instanceof Element)) return;
+  const button = target.closest<HTMLButtonElement>('#start-button, #missions-start');
+  if (!button || button.disabled) return;
+  button.dataset.originalLabel ||= button.innerHTML;
+  button.disabled = true;
+  button.style.opacity = '0.8';
+  button.setAttribute('aria-busy','true');
+  const label = button.querySelector('b') || button;
+  if (label instanceof HTMLElement) label.textContent = 'جارٍ دخول ساحة المعركة…';
+  if (launchAttemptTimer !== null) window.clearTimeout(launchAttemptTimer);
+  launchAttemptTimer = window.setTimeout(() => {
+    if (!document.body.classList.contains('game-started')) {
+      button.disabled = false;
+      button.style.opacity = '';
+      button.removeAttribute('aria-busy');
+      showStartupFailure('لم يبدأ المشهد خلال المهلة. قد يكون محرك الرسومات أو تحميل اللعبة قد تعطل.');
+    }
+  }, 4500);
+}, true);
+
 const root = document.querySelector<HTMLDivElement>('#game-root');
 if (!root) throw new Error('Game root not found');
 
@@ -882,6 +930,11 @@ function beginGame(): void {
   configureCampaignStage();
   document.body.classList.remove('portrait-landscape-sim','needs-landscape');
   started = true;
+  gameBootComplete = true;
+  if (launchAttemptTimer !== null) window.clearTimeout(launchAttemptTimer);
+  launchAttemptTimer = null;
+  document.querySelectorAll<HTMLButtonElement>('#start-button,#missions-start').forEach((button) => { button.disabled = false; button.style.opacity = ''; button.removeAttribute('aria-busy'); });
+  document.querySelector('#startup-error')?.remove();
   document.body.classList.add('game-started');
   paused = false;
   // Do not request fullscreen or lock the device orientation; preserve portrait touch layout.
@@ -890,7 +943,7 @@ function beginGame(): void {
   startScreen.hidden = true;
   startScreen.setAttribute('aria-hidden','true');
   startScreen.style.display = 'none';
-  if (window.matchMedia('(pointer:fine)').matches) renderer.domElement.requestPointerLock();
+  if (window.matchMedia('(pointer:fine)').matches) { try { renderer.domElement.requestPointerLock(); } catch (error) { console.warn('Pointer lock unavailable:', error); } }
   notify('Suivez le marqueur de mission. Utilisez COUVERT près des buissons ou des fortifications.');
 }
 $('#outfit-algerian').addEventListener('click', () => setPlayerOutfit('algerian'));
