@@ -7,6 +7,7 @@ import './style.css';
 // Install startup diagnostics before building the Three.js scene. A failed
 // module initialization should never leave a silent, unresponsive menu.
 let gameBootComplete = false;
+let launchDebugPhase = 'module initialization';
 let launchAttemptTimer: number | null = null;
 function showStartupFailure(message: string): void {
   const screen = document.querySelector<HTMLElement>('#start-screen');
@@ -48,7 +49,7 @@ document.addEventListener('click', (event) => {
       console.error('Early mission launch failed:', error);
       const detail = error instanceof Error ? error.message : String(error);
       const stack = error instanceof Error ? error.stack || '' : '';
-      showStartupFailure('تعذر تشغيل المعركة: ' + detail + (stack ? '\\n' + stack.slice(0,900) : ''));
+      showStartupFailure('تعذر تشغيل المعركة عند: ' + launchDebugPhase + ' — ' + detail + (stack ? '\\n' + stack.slice(0,700) : ''));
     }
   }, 0);
 }, true);
@@ -859,13 +860,19 @@ function updateCampaignHeader(): void {
   const chapterLabel=$('#chapter-label'); if(chapterLabel) chapterLabel.textContent=chapter.title;
 }
 function configureCampaignStage(): void {
+  launchDebugPhase = 'إعداد موقع المرحلة';
   const sector = campaignSector(campaignStage);
+  launchDebugPhase = 'تحديد منطقة الحملة';
   const base = new THREE.Vector3(sector.x,0,sector.z);
+  launchDebugPhase = 'تحميل بيانات الفصل';
   const chapter=campaignChapter(campaignStage);
+  launchDebugPhase = 'تغيير السماء والإضاءة';
   scene.background = new THREE.Color(chapter.sky);
   scene.fog = new THREE.Fog(chapter.fog, chapter.kind==='desert'?420:300, chapter.kind==='city'?1250:1600);
+  launchDebugPhase = 'تغيير الأرضية';
   (terrain.material as THREE.MeshStandardMaterial).color.setHex(chapter.terrain);
   sun.intensity = chapter.kind==='desert'?2.65:chapter.kind==='city'?1.75:2.2;
+  launchDebugPhase = 'تحديد مكان اللاعب';
   player.position.copy(base).add(new THREE.Vector3(0,0,18));
   allies.forEach((ally,index) => {
     const offsets=[new THREE.Vector3(-2.2,0,4),new THREE.Vector3(2.2,0,4),new THREE.Vector3(0,0,6.5)];
@@ -873,15 +880,20 @@ function configureCampaignStage(): void {
     ally.rotation.y=player.rotation.y;
   });
   player.rotation.set(0,0,0);
+  launchDebugPhase = 'تحديد صندوق الإمدادات';
   supplyCache.position.copy(base).add(new THREE.Vector3(-8,0,-17));
   supplyCache.visible = true;
   marker.position.copy(base).add(new THREE.Vector3(5,0,-54));
   flagGroup.position.copy(base).add(new THREE.Vector3(-8,0,-38));
   missionDone = false; suppliesCollected = false;
   goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false;
+  launchDebugPhase = 'تحديد عدد الجنود';
   const count = Math.min(24, 8 + Math.floor((campaignStage-1)/4));
+  launchDebugPhase = 'إنشاء قوات العدو';
   resetEnemies(count, base);
+  launchDebugPhase = 'تحديث بيانات المهمة';
   updateCampaignHeader();
+  launchDebugPhase = 'تحديث واجهة الحالة';
   updateHud();
 }
 function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
@@ -918,17 +930,22 @@ function closeMissionBriefing(): void {
   $('#mission-cinematic').setAttribute('aria-hidden','true');
 }
 function beginGame(): void {
+  launchDebugPhase = 'إغلاق المشهد التمهيدي';
   $('#mission-cinematic').classList.remove('visible');
   $('#mission-cinematic').setAttribute('aria-hidden','true');
 
   // Hand control to the live scene before doing any stage-specific work.
   // This prevents a stage setup exception from trapping the player in the menu.
+  launchDebugPhase = 'إعادة ضبط صحة اللاعب';
   health = 100; stamina = 100; damageCooldown = 0; ammo = 12; reserveAmmo = 48;
   gameOver = false; reloading = false; aiming = false; crouching = false; playerHidden = false;
+  launchDebugPhase = 'إعادة ضبط نموذج اللاعب';
   player.scale.set(1,1,1);
+  launchDebugPhase = 'تهيئة زر الاحتماء';
   $('#hide-button').classList.remove('active');
   $('#hide-button').innerHTML = '<span>▣</span><small>احتماء</small>';
   yaw = 0; pitch = -0.10; cameraDistance = 8.4; verticalVelocity = 0; onGround = true;
+  launchDebugPhase = 'تفعيل وضع اللعب';
   document.body.classList.remove('portrait-landscape-sim','needs-landscape');
   started = true;
   paused = false;
@@ -950,17 +967,21 @@ function beginGame(): void {
   // Stage setup is isolated: if one optional stage element fails, the game
   // loop and player controls remain active and the actual error is reported.
   try {
+    launchDebugPhase = 'بدء إعداد ميدان المعركة';
     configureCampaignStage();
   } catch (error) {
     console.error('Campaign stage setup failed:', error);
     const detail = error instanceof Error ? error.message : String(error);
     notify('بدأت المعركة، لكن تعذر إعداد بعض عناصر المرحلة: ' + detail);
   }
+  launchDebugPhase = 'تهيئة الكاميرا';
   if (window.matchMedia('(pointer:fine)').matches) {
     try { renderer.domElement.requestPointerLock(); }
     catch (error) { console.warn('Pointer lock unavailable:', error); }
   }
+  launchDebugPhase = 'إظهار تعليمات المهمة';
   notify('اتبع مؤشر المهمة واستخدم زر الاحتماء قرب الصخور والأشجار.');
+  launchDebugPhase = 'تم الدخول إلى اللعبة';
 }
 $('#outfit-algerian').addEventListener('click', () => setPlayerOutfit('algerian'));
 $('#outfit-french').addEventListener('click', () => setPlayerOutfit('french'));
