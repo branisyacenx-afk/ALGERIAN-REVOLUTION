@@ -567,3 +567,75 @@ body:not(.game-started) #mobile-controls{
 .archive-columns{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.archive-columns>div{padding:17px;border:1px solid #ffffff20;border-radius:9px;background:#ffffff08}.archive-columns h3{font-size:13px;color:#d8bc7d}.archive-columns p{font-size:11px;color:#d0d3c6;line-height:2}
 @media(max-width:760px){#start-screen{padding:0!important}.main-menu-shell{width:100%;height:100dvh;min-height:0;border:0;border-radius:0;grid-template-columns:72px minmax(0,1fr)}.menu-sidebar{padding:12px 6px}.menu-brand{justify-content:center;padding:4px 0 14px}.menu-brand>div,.menu-profile>div:last-child,.menu-sidebar-footer{display:none}.menu-emblem{width:38px;height:38px}.menu-profile{justify-content:center;padding:13px 0}.menu-profile .profile-avatar{width:37px;height:37px}.menu-nav{gap:7px}.menu-tab{justify-content:center;padding:11px 4px;font-size:0;gap:0}.menu-tab span{font-size:19px}.menu-main{padding:14px 12px 10px}.menu-topbar{padding-bottom:10px}.menu-topbar h1{font-size:19px}.menu-eyebrow{font-size:7px}.menu-top-meta{gap:4px}.menu-top-meta span{padding:5px 6px;font-size:7px}.menu-panel{padding:13px 0 10px}.campaign-hero{grid-template-columns:1fr;min-height:0}.campaign-hero-copy{padding:17px}.campaign-hero h2{font-size:27px}.campaign-hero p{font-size:10px}.campaign-stats{margin:10px 0;gap:20px}.campaign-stats strong{font-size:16px}.primary-launch{min-width:0;width:100%;padding:9px 11px}.hero-map{min-height:115px}.menu-section-heading{margin:12px 0 7px}.menu-section-heading h3{font-size:12px}.next-operation-card{grid-template-columns:37px minmax(0,1fr);gap:8px;padding:9px}.operation-number{width:35px;height:35px;font-size:14px}.operation-details p{font-size:8px}.operation-progress{grid-column:2;display:flex;align-items:center;gap:8px;text-align:right;min-width:0}.operation-progress small{margin:0}.operation-progress>div{flex:1}.menu-chapter-strip{grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px}.menu-chapter-strip>div{padding:6px}.menu-chapter-strip span{font-size:7px}.menu-chapter-strip small{font-size:6px}.menu-chapter-strip .more-chapters{display:none}.menu-footer{font-size:6px}.panel-heading h2{font-size:20px}.panel-heading p{font-size:9px}.dossier-card{padding:17px}.dossier-stamp{top:13px;left:12px;font-size:8px}.dossier-card h3{font-size:19px}.dossier-facts{gap:5px;margin:12px 0}.dossier-facts>div{padding:8px}.dossier-facts b{font-size:8px}.dossier-facts small{font-size:7px}.loadout-options{gap:7px}.loadout-choice{padding:12px;gap:6px}.loadout-choice b{font-size:11px}.loadout-choice small{font-size:8px}.loadout-flag{font-size:24px}.equipment-note{padding:10px}.archive-columns{gap:7px}.archive-columns>div{padding:10px}.archive-columns h3{font-size:10px}.archive-columns p{font-size:8px}.settings-list label{padding:12px}.settings-list label span b{font-size:10px}.settings-list label span small{font-size:8px}.settings-list select{max-width:145px;font-size:8px}.brief-note{font-size:8px}}
 @media(max-height:560px) and (min-width:761px){.main-menu-shell{height:calc(100dvh - 12px);min-height:0}.menu-main{padding-top:12px}.campaign-hero{min-height:195px}.hero-map{min-height:195px}.campaign-hero-copy{padding:15px 20px}.campaign-stats{margin:10px 0}.menu-panel{padding-top:12px}.menu-chapter-strip{margin-top:7px}}
+
+
+/* Mobile portrait repair: never rotate the entire application or hide it. */
+@media (max-width: 900px) and (pointer: coarse) and (orientation: portrait) {
+  html, body, #app { width:100%; height:100%; min-height:100%; overflow:hidden; }
+  body.portrait-landscape-sim #app {
+    position:fixed !important; inset:0 !important;
+    width:100vw !important; height:100dvh !important;
+    transform:none !important; transform-origin:center center !important;
+    overflow:hidden !important;
+  }
+  body.portrait-landscape-sim #game-root,
+  body.portrait-landscape-sim #hud { width:100vw !important; height:100dvh !important; }
+  #start-screen {
+    position:fixed !important; inset:0 !important; display:block !important;
+    width:100vw !important; height:100dvh !important; min-height:0 !important;
+    padding:0 !important; overflow-y:auto !important; overflow-x:hidden !important;
+    -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+  }
+  .main-menu-shell {
+    display:flex !important; flex-direction:column !important;
+    width:100% !important; height:auto !important; min-height:100dvh !important;
+    max-height:none !important; overflow:visible !important;
+    border:0 !important; border-radius:0 !important;
+  }
+  .menu-sidebar {
+    flex:none !important; display:block !important; padding:10px 12px 8px !important;
+    border-left:0 !important; border-bottom:1px solid #c6a66a44 !important;
+  }
+  .menu-brand { justify-content:flex-start !important; padding:0 0 8px !important; }
+  .menu-brand>div { display:block !important; }
+  .menu-profile, .menu-sidebar-footer { display:none !important; }
+  .menu-nav {
+    display:flex !important; flex-direction:row !important; flex-wrap:nowrap !important;
+    gap:6px !important; overflow-x:auto !important; padding:2px 0 5px !important;
+    scrollbar-width:none;
+  }
+  .menu-nav::-webkit-scrollbar { display:none; }
+  .menu-tab {
+    flex:0 0 auto !important; display:flex !important; gap:5px !important;
+    justify-content:center !important; padding:8px 10px !important;
+    font-size:10px !important; white-space:nowrap !important;
+  }
+  .menu-tab span { width:auto !important; font-size:13px !important; }
+  .menu-main {
+    flex:1 0 auto !important; min-height:0 !important; overflow:visible !important;
+    padding:12px 12px 22px !important;
+  }
+  .menu-topbar { align-items:flex-start !important; gap:8px !important; }
+  .menu-topbar h1 { font-size:21px !important; }
+  .menu-eyebrow { font-size:8px !important; }
+  .menu-top-meta span { font-size:8px !important; }
+  .menu-panel { min-height:0 !important; padding:14px 0 !important; }
+  .campaign-hero { display:flex !important; flex-direction:column !important; min-height:0 !important; }
+  .campaign-hero-copy { padding:18px !important; }
+  .campaign-hero h2 { font-size:30px !important; }
+  .campaign-hero p { font-size:12px !important; line-height:1.8 !important; }
+  .campaign-stats { gap:22px !important; }
+  .campaign-stats strong { font-size:19px !important; }
+  .primary-launch { width:100% !important; min-height:54px !important; }
+  .hero-map { min-height:145px !important; width:100% !important; }
+  .menu-section-heading { margin:16px 0 8px !important; }
+  .next-operation-card { grid-template-columns:42px minmax(0,1fr) !important; }
+  .operation-progress { grid-column:1/-1 !important; display:grid !important; grid-template-columns:auto 1fr !important; }
+  .operation-progress>div { grid-column:1/-1 !important; }
+  .menu-chapter-strip { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+  .menu-footer { font-size:8px !important; flex-wrap:wrap !important; }
+  .archive-columns { grid-template-columns:1fr !important; }
+  .loadout-options { grid-template-columns:1fr !important; }
+  body.needs-landscape:before { display:none !important; }
+  body.needs-landscape #app { visibility:visible !important; }
+}
