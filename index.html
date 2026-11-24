@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#101914" />
+    <meta name="description" content="ثورة الجزائر — لعبة مغامرة تاريخية ثلاثية الأبعاد." />
+    <title>ثورة الجزائر | The Algerian Revolution</title>
+  </head>
+  <body>
+    <div id="app">
+      <div id="game-root" aria-label="ساحة اللعبة"></div>
+      <section id="hud" aria-live="polite">
+        <header class="topbar">
+          <div class="brand"><span class="brand-mark">✦</span><div><strong>ثورة الجزائر</strong><small>THE ALGERIAN REVOLUTION</small></div></div>
+          <div class="chapter"><span>الفصل الأول</span><strong>نداء الجبال</strong></div>
+        </header>
+        <div class="mission"><span class="eyebrow">المهمة الحالية</span><strong>استكشف الممر الجبلي</strong><p>تحرّك نحو العلامة المضيئة وتعرّف على المنطقة.</p><div class="progress"><i id="mission-progress"></i></div><small id="mission-status">الهدف: الوصول إلى نقطة التجمع</small></div>
+        <div class="bottom-hud"><div class="health"><span>الحالة</span><strong id="health-value">100%</strong><div class="meter"><i id="health-meter"></i></div></div><div class="ammo"><span>الذخيرة</span><strong id="ammo-value">12 / 12</strong></div><div class="hint" id="desktop-hint">WASD حركة · Shift ركض · Space قفز · زر الفأرة إطلاق</div></div>
+        <div id="crosshair">+</div>
+        <div id="toast" role="status"></div>
+        <div id="mobile-controls">
+          <div id="joystick"><div id="stick"></div></div>
+          <div class="mobile-actions"><button id="jump-button" aria-label="قفز">↑</button><button id="fire-button" aria-label="إطلاق">●</button></div>
+        </div>
+        <div id="start-screen"><div class="start-card"><span class="eyebrow">نموذج أولي · إصدار تجريبي</span><h1>ثورة الجزائر</h1><p>رحلة تفاعلية عبر محطات من تاريخ المقاومة الجزائرية.</p><button id="start-button">ابدأ المهمة</button><small>مشهد تجريبي بأصول مؤقتة — ليس تصويراً تاريخياً نهائياً.</small></div></div>
+      </section>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
