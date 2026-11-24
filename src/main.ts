@@ -273,10 +273,25 @@ function beginGame(): void {
     health = 100; stamina = 100; damageCooldown = 0; ammo = 12; reserveAmmo = 48; missionDone = false; suppliesCollected = false; goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false; gameOver = false;
     supplyCache.visible = true;
     player.position.set(0, 0, 9); player.rotation.set(0, 0, 0);
+    yaw = 0; pitch = -0.12;
     verticalVelocity = 0; onGround = true; resetEnemies(); updateHud();
   }
   started = true;
   paused = false;
+  // Android browsers generally allow orientation lock after a user gesture/fullscreen.
+  if (window.matchMedia('(pointer: coarse)').matches) {
+    const rootElement = document.documentElement as HTMLElement & { requestFullscreen?: () => Promise<void> };
+    const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: string) => Promise<void> };
+    const enterLandscape = async () => {
+      try {
+        if (!document.fullscreenElement && rootElement.requestFullscreen) await rootElement.requestFullscreen();
+        await orientation.lock?.('landscape');
+      } catch {
+        document.body.classList.add('needs-landscape');
+      }
+    };
+    void enterLandscape();
+  }
   $('#pause-screen').classList.remove('visible');
   $('#victory-screen').classList.remove('visible');
   startScreen.style.display = 'none';
@@ -325,19 +340,23 @@ document.addEventListener('mousemove', (event) => {
   yaw -= event.movementX * 0.0022;
   pitch = THREE.MathUtils.clamp(pitch - event.movementY * 0.0018, -0.7, 0.45);
 });
-renderer.domElement.addEventListener('pointerdown', (event) => {
-  if (event.pointerType !== 'touch' || !started) return;
-  lookPointer = event.pointerId; lastTouchX = event.clientX; lastTouchY = event.clientY;
+const lookArea = $('#look-area');
+lookArea.addEventListener('pointerdown', (event) => {
+  if (event.pointerType !== 'touch' || !started || paused) return;
+  lookPointer = event.pointerId;
+  lastTouchX = event.clientX; lastTouchY = event.clientY;
+  lookArea.setPointerCapture(event.pointerId);
 });
-renderer.domElement.addEventListener('pointermove', (event) => {
+lookArea.addEventListener('pointermove', (event) => {
   if (event.pointerType !== 'touch' || lookPointer !== event.pointerId) return;
   const dx = event.clientX - lastTouchX; const dy = event.clientY - lastTouchY;
   lastTouchX = event.clientX; lastTouchY = event.clientY;
-  yaw -= dx * 0.006; pitch = THREE.MathUtils.clamp(pitch - dy * 0.004, -0.7, 0.45);
+  yaw -= dx * 0.0042;
+  pitch = THREE.MathUtils.clamp(pitch - dy * 0.0032, -0.62, 0.34);
 });
 const releaseLook = (event: PointerEvent) => { if (lookPointer === event.pointerId) lookPointer = null; };
-renderer.domElement.addEventListener('pointerup', releaseLook);
-renderer.domElement.addEventListener('pointercancel', releaseLook);
+lookArea.addEventListener('pointerup', releaseLook);
+lookArea.addEventListener('pointercancel', releaseLook);
 document.addEventListener('keydown', (event) => {
   keys.add(event.code);
   if (event.code === 'Space') event.preventDefault();
@@ -377,15 +396,28 @@ function shoot(): void {
   ammo--;
   // Shoot through the screen reticle so camera aim and hit detection agree.
   raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-  raycaster.far = 60;
-  const hit = raycaster.intersectObjects(enemyMeshes, false)[0];
-  if (hit) {
-    const target = enemies.find((enemy) => {
-      let found = false;
-      enemy.traverse((part) => { if (part === hit.object) found = true; });
-      return found;
-    });
-    if (target) {
+  raycaster.far = 65;
+  // Aim-assist volumes make touch shooting usable on small screens.
+  let target: THREE.Group | undefined;
+  let targetDistance = Infinity;
+  for (const enemy of enemies) {
+    const bounds = new THREE.Box3().setFromObject(enemy).expandByScalar(0.42);
+    const point = new THREE.Vector3();
+    if (raycaster.ray.intersectBox(bounds, point)) {
+      const distance = camera.position.distanceTo(point);
+      if (distance < targetDistance && distance <= 65) { target = enemy; targetDistance = distance; }
+    }
+  }
+  const shotEnd = target
+    ? target.position.clone().add(new THREE.Vector3(0, 1.1, 0))
+    : raycaster.ray.origin.clone().addScaledVector(raycaster.ray.direction, 32);
+  const tracerGeometry = new THREE.BufferGeometry().setFromPoints([camera.position.clone(), shotEnd]);
+  const tracer = new THREE.Line(tracerGeometry, new THREE.LineBasicMaterial({ color: 0xffd58a, transparent: true, opacity: 0.9 }));
+  scene.add(tracer);
+  window.setTimeout(() => { scene.remove(tracer); tracerGeometry.dispose(); (tracer.material as THREE.Material).dispose(); }, 95);
+  $('#crosshair').classList.add('firing');
+  window.setTimeout(() => $('#crosshair').classList.remove('firing'), 110);
+  if (target) {
       target.userData.health = Math.max(0, (target.userData.health as number) - 1);
       if (target.userData.health > 0) {
         target.traverse((part) => {
@@ -396,7 +428,9 @@ function shoot(): void {
             if (tint.color) tint.color.lerp(new THREE.Color(0x9a4438), 0.38);
           }
         });
-        notify('أصيب الخصم. واصل التصويب لإخراجه من المواجهة.');
+        $('#crosshair').classList.add('hit');
+        window.setTimeout(() => $('#crosshair').classList.remove('hit'), 180);
+        notify('أصبت الهدف! أطلق مرة أخرى لإكمال تحييده.');
       } else {
         scene.remove(target);
         const index = enemies.indexOf(target);
@@ -407,14 +441,16 @@ function shoot(): void {
           const meshIndex = enemyMeshes.indexOf(part);
           if (meshIndex >= 0) enemyMeshes.splice(meshIndex, 1);
         }
-        notify('تم إخراج خصم من المواجهة.');
+        $('#crosshair').classList.add('hit');
+        window.setTimeout(() => $('#crosshair').classList.remove('hit'), 220);
+        notify('تم تحييد الخصم.');
       }
     }
   }
   updateHud();
 }
-document.addEventListener('mousedown', (event) => { if (event.button === 0) shoot(); });
-$('#fire-button').addEventListener('click', shoot);
+document.addEventListener('mousedown', (event) => { if (event.button === 0 && window.matchMedia('(pointer:fine)').matches) shoot(); });
+$('#fire-button').addEventListener('pointerdown', (event) => { event.preventDefault(); shoot(); });
 $('#jump-button').addEventListener('click', () => { if (started && !gameOver && onGround) { verticalVelocity = 6.2; onGround = false; } });
 const sprintButton = $('#sprint-button');
 sprintButton.addEventListener('pointerdown', (event) => { event.preventDefault(); mobileSprint = true; sprintButton.classList.add('active'); });
