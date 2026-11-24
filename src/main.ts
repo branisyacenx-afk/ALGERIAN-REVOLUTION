@@ -34,17 +34,24 @@ document.addEventListener('click', (event) => {
   if (!(target instanceof Element)) return;
   const button = target.closest<HTMLButtonElement>('#start-button, #missions-start');
   if (!button || button.disabled) return;
+
+  // This capture-phase handler owns the launch action. It does not depend on
+  // listeners registered later in the module, which may not have initialized.
+  event.preventDefault();
+  event.stopImmediatePropagation();
   button.dataset.originalLabel ||= button.innerHTML;
   button.style.opacity = '0.85';
   const label = button.querySelector('b') || button;
   if (label instanceof HTMLElement) label.textContent = 'جارٍ دخول ساحة المعركة…';
   if (launchAttemptTimer !== null) window.clearTimeout(launchAttemptTimer);
-  launchAttemptTimer = window.setTimeout(() => {
-    if (!document.body.classList.contains('game-started')) {
-      button.style.opacity = '';
-      showStartupFailure('لم يبدأ المشهد خلال المهلة. قد يكون محرك الرسومات أو تحميل اللعبة قد تعطل.');
-    }
-  }, 4500);
+  try {
+    closeMissionBriefing();
+    beginGame();
+  } catch (error) {
+    console.error('Early mission launch failed:', error);
+    const detail = error instanceof Error ? error.message : String(error);
+    showStartupFailure('تعذر تشغيل المعركة: ' + detail);
+  }
 }, true);
 
 const root = document.querySelector<HTMLDivElement>('#game-root');
