@@ -503,3 +503,29 @@ body{font-family:'IBM Plex Sans Arabic',Arial,sans-serif}
 @keyframes cinema-progress{to{width:100%}}
 @media(max-width:700px){.cinema-content{width:84vw;margin:18vh auto 0;width:84vw}.cinema-reticle{right:-8%;top:22%;width:54vw;opacity:.32}.cinema-brief{grid-template-columns:1fr;gap:6px}.cinema-brief>div{padding:7px 10px}.cinema-content>p{margin-bottom:12px}.cinema-countdown{margin:12px 0}.cinema-topline{font-size:8px;letter-spacing:1px}.cinema-bottom{font-size:7px}}
 @media(max-height:520px){.cinema-content{margin-top:12vh}.cinema-content h2{font-size:clamp(22px,4vw,38px);margin:4px 0}.cinema-content>p{margin:4px 0 10px;line-height:1.4}.cinema-brief>div{padding:7px 9px}.cinema-countdown{margin:8px 0}.cinema-kicker{margin-bottom:4px}}
+
+
+/* Critical mobile input fix: the full-screen camera drag layer must never sit
+   above the start menu. Keep the start screen as the top interactive layer. */
+#start-screen{
+  position:absolute!important;
+  inset:0!important;
+  z-index:1000!important;
+  pointer-events:auto!important;
+  isolation:isolate!important;
+}
+#start-screen .start-card,
+#start-screen button{
+  position:relative!important;
+  z-index:1001!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+}
+body:not(.game-started) #look-area{
+  display:none!important;
+  pointer-events:none!important;
+}
+body:not(.game-started) #camera-zoom-controls,
+body:not(.game-started) #mobile-controls{
+  pointer-events:none!important;
+}
