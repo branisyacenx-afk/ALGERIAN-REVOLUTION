@@ -292,16 +292,6 @@ function attachSoldierModel(actor: THREE.Group, tint: number): void {
     if (!(part instanceof THREE.Mesh)) return;
     part.castShadow = true;
     part.receiveShadow = true;
-    if (part.material) {
-      const mats = Array.isArray(part.material) ? part.material : [part.material];
-      for (const mat of mats) {
-        if (mat instanceof THREE.MeshStandardMaterial) {
-          mat = mat.clone();
-          mat.color.setHex(tint);
-          mat.roughness = Math.max(mat.roughness, 0.72);
-        }
-      }
-    }
   });
   // Clone materials per actor so faction colors never leak between soldiers.
   model.traverse((part) => {
