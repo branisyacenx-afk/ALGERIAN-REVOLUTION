@@ -408,3 +408,51 @@ body.portrait-landscape-sim #camera-zoom-controls #camera-mode-toggle{width:44px
 body.portrait-landscape-sim #crosshair{width:24px!important;height:24px!important}
 body.portrait-landscape-sim #pickup-button{top:57%!important;min-width:150px!important;padding:8px 10px!important;font-size:10px!important}
 body.portrait-landscape-sim #toast{top:34%!important;font-size:10px!important;padding:6px 9px!important}
+
+
+/* Arabic mobile combat layout — clear center field and independent camera touch zone. */
+html,body,#app,#hud{direction:rtl}
+body{font-family:'IBM Plex Sans Arabic',Arial,sans-serif}
+#look-area{display:block!important;position:absolute!important;left:36%!important;right:0!important;top:0!important;bottom:0!important;width:auto!important;height:auto!important;z-index:6!important;background:transparent!important;border:0!important;box-shadow:none!important;pointer-events:auto!important;touch-action:none!important}
+#look-area span{display:none!important}
+#mobile-controls{z-index:18!important;direction:ltr!important;bottom:10px!important;left:10px!important;right:10px!important}
+#joystick{flex:0 0 clamp(88px,15vw,128px)!important;width:clamp(88px,15vw,128px)!important;height:clamp(88px,15vw,128px)!important}
+.mobile-actions{grid-template-areas:"aim jump fire" "reload sprint hide"!important;grid-template-columns:repeat(3,clamp(42px,6vw,56px))!important;grid-template-rows:repeat(2,clamp(42px,6vw,56px))!important;gap:5px!important;background:#101914b8!important}
+.mobile-actions button{width:100%!important;height:100%!important;touch-action:none!important;font-family:'IBM Plex Sans Arabic',sans-serif!important}
+.mobile-actions #fire-button{width:clamp(56px,7vw,70px)!important;height:clamp(56px,7vw,70px)!important;grid-area:fire!important;font-size:12px!important}
+.mobile-actions #aim-button{grid-area:aim!important}.mobile-actions #jump-button{grid-area:jump!important}
+.mobile-actions #reload-button{grid-area:reload!important}.mobile-actions #sprint-button{grid-area:sprint!important}.mobile-actions #hide-button{grid-area:hide!important}
+#radar-panel{top:10px!important;right:10px!important;left:auto!important;width:clamp(90px,12vw,132px)!important;padding:5px!important;z-index:16!important}
+#radar{width:100%!important;height:auto!important;aspect-ratio:1!important}
+.radar-title{font-size:9px!important}.radar-legend{font-size:6px!important}
+.mission{top:10px!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;width:min(42vw,340px)!important;padding:7px 10px!important;text-align:right!important;z-index:16!important}
+.mission .eyebrow{font-size:8px!important}.mission strong{font-size:12px!important;margin:2px 0!important}
+.mission p{font-size:8px!important;line-height:1.3!important;margin:0 0 4px!important}.mission small{font-size:7px!important;margin-top:3px!important}
+.bottom-hud{left:50%!important;right:auto!important;transform:translateX(-50%)!important;bottom:10px!important;width:min(36vw,360px)!important;min-height:42px!important;padding:5px 8px!important;gap:9px!important;z-index:15!important;justify-content:center!important}
+.health,.stamina{width:68px!important;font-size:8px!important}.health strong,.ammo strong,.stamina strong{font-size:10px!important}.ammo{font-size:8px!important}.hint{display:none!important}
+#camera-zoom-controls{top:10px!important;left:10px!important;right:auto!important;transform:none!important;z-index:19!important;flex-direction:row!important;gap:4px!important}
+#camera-zoom-controls button{width:30px!important;min-width:30px!important;height:30px!important;font-size:13px!important}
+#camera-zoom-controls #camera-mode-toggle{width:44px!important;min-width:44px!important;height:30px!important;font-size:8px!important}
+#crosshair{z-index:14!important;pointer-events:none!important}#pickup-button{z-index:22!important}
+#toast{z-index:30!important;direction:rtl!important;font-family:'IBM Plex Sans Arabic',sans-serif!important}
+#start-screen{direction:rtl!important}.start-card{text-align:right!important}
+.start-card h1{font-family:'IBM Plex Sans Arabic',sans-serif!important;font-size:clamp(28px,5vw,44px)!important}
+.start-card p,.howto,.outfit-picker{text-align:right!important}.howto ol{padding-right:22px!important;padding-left:0!important}
+#pause-screen,#victory-screen{direction:rtl!important}
+@media(max-width:900px){
+ #look-area{left:34%!important;right:0!important;top:0!important;bottom:0!important}
+ #radar-panel{width:clamp(80px,14vw,106px)!important;top:7px!important;right:7px!important}
+ .radar-legend{font-size:5px!important}
+ .mission{top:7px!important;width:min(42vw,245px)!important;padding:5px 7px!important}
+ .mission strong{font-size:9px!important}.mission p{font-size:7px!important}.mission small{font-size:6px!important}
+ .bottom-hud{bottom:7px!important;width:min(34vw,220px)!important;padding:4px 6px!important;gap:6px!important}
+ .health,.stamina{width:48px!important;font-size:6px!important}.health strong,.ammo strong,.stamina strong{font-size:8px!important}.ammo{font-size:6px!important}
+ #mobile-controls{left:7px!important;right:7px!important;bottom:7px!important}
+ #joystick{width:clamp(76px,15vw,98px)!important;height:clamp(76px,15vw,98px)!important;flex-basis:clamp(76px,15vw,98px)!important}
+ .mobile-actions{grid-template-columns:repeat(3,clamp(36px,6.5vw,46px))!important;grid-template-rows:repeat(2,clamp(36px,6.5vw,46px))!important;gap:3px!important;padding:4px!important}
+ .mobile-actions button{font-size:13px!important}.mobile-actions button small{font-size:6px!important}
+ .mobile-actions #fire-button{width:clamp(48px,7.5vw,58px)!important;height:clamp(48px,7.5vw,58px)!important}
+ #camera-zoom-controls{top:7px!important;left:7px!important}
+ #camera-zoom-controls button{width:25px!important;min-width:25px!important;height:25px!important}
+ #camera-zoom-controls #camera-mode-toggle{width:36px!important;min-width:36px!important;height:25px!important;font-size:7px!important}
+}
