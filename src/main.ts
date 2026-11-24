@@ -221,8 +221,12 @@ function shoot(): void {
       scene.remove(target);
       const index = enemies.indexOf(target);
       if (index >= 0) enemies.splice(index, 1);
-      const meshIndex = enemyMeshes.indexOf(hit.object);
-      if (meshIndex >= 0) enemyMeshes.splice(meshIndex, 1);
+      const removedMeshes: THREE.Object3D[] = [];
+      target.traverse((part) => { if (part instanceof THREE.Mesh) removedMeshes.push(part); });
+      for (const part of removedMeshes) {
+        const meshIndex = enemyMeshes.indexOf(part);
+        if (meshIndex >= 0) enemyMeshes.splice(meshIndex, 1);
+      }
       notify('تم تحييد خصم في النموذج التجريبي.');
     }
   }
