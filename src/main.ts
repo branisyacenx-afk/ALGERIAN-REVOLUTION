@@ -1205,9 +1205,9 @@ function animate(): void {
         if (role === 'leftLeg' || role === 'rightArm') part.rotation.x = stride;
         if (role === 'rightLeg' || role === 'leftArm') part.rotation.x = -stride;
       });
-      // The imported Soldier model faces +Z in its bind pose.
-      // Rotate its +Z axis toward the actual world-space travel vector.
-      const targetHeading = Math.atan2(direction.x, direction.z);
+      // attachSoldierModel rotates the imported +Z rig by PI so the visible
+      // character's forward axis is local -Z. Aim that -Z axis along travel.
+      const targetHeading = Math.atan2(-direction.x, -direction.z);
       const headingDelta = Math.atan2(Math.sin(targetHeading - player.rotation.y), Math.cos(targetHeading - player.rotation.y));
       player.rotation.y += headingDelta * (1 - Math.exp(-delta * 13));
     }
