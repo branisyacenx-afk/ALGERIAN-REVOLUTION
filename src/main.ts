@@ -27,6 +27,48 @@ terrain.rotation.x = -Math.PI / 2;
 terrain.receiveShadow = true;
 scene.add(terrain);
 
+// A narrow, stylized dirt track gives the first playable space a readable route.
+const trailCurve = new THREE.CatmullRomCurve3([
+  new THREE.Vector3(1.5, 0.035, 15),
+  new THREE.Vector3(0.2, 0.035, 5),
+  new THREE.Vector3(-2.4, 0.035, -6),
+  new THREE.Vector3(-1.2, 0.035, -17),
+  new THREE.Vector3(0, 0.035, -29),
+  new THREE.Vector3(2.8, 0.035, -39)
+]);
+const trail = new THREE.Mesh(
+  new THREE.TubeGeometry(trailCurve, 90, 0.72, 8, false),
+  new THREE.MeshStandardMaterial({ color: 0x927d5d, roughness: 1 })
+);
+trail.scale.y = 0.035;
+trail.receiveShadow = true;
+scene.add(trail);
+
+// Sparse low-poly trees help establish scale without heavy mobile rendering cost.
+for (let i = 0; i < 26; i++) {
+  const side = i % 2 === 0 ? -1 : 1;
+  const z = 13 - i * 2.25;
+  const x = side * (7 + (i % 4) * 2.1);
+  const tree = new THREE.Group();
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.13, 0.2, 1.25, 6),
+    new THREE.MeshStandardMaterial({ color: 0x554533, roughness: 1 })
+  );
+  trunk.position.y = 0.62;
+  trunk.castShadow = true;
+  tree.add(trunk);
+  const crown = new THREE.Mesh(
+    new THREE.ConeGeometry(1.15, 3.2, 6),
+    new THREE.MeshStandardMaterial({ color: i % 3 === 0 ? 0x48563d : 0x596447, flatShading: true, roughness: 1 })
+  );
+  crown.position.y = 2.55;
+  crown.castShadow = true;
+  tree.add(crown);
+  tree.position.set(x, 0, z);
+  tree.rotation.y = i * 0.73;
+  scene.add(tree);
+}
+
 // Low-poly ridgelines are deliberate greybox placeholders, not final scanned locations.
 function ridge(x: number, z: number, sx: number, sy: number, sz: number, color: number): void {
   const mesh = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 5), new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 1 }));
@@ -207,9 +249,9 @@ function shoot(): void {
   }
   ammo--;
   const origin = player.position.clone().add(new THREE.Vector3(0, 1.35, 0));
-  const aim = new THREE.Vector3(Math.sin(yaw), pitch, -Math.cos(yaw)).normalize();
-  raycaster.set(origin, aim);
-  raycaster.far = 45;
+  // Shoot through the screen reticle so camera aim and hit detection agree.
+  raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+  raycaster.far = 60;
   const hit = raycaster.intersectObjects(enemyMeshes, false)[0];
   if (hit) {
     const target = enemies.find((enemy) => {
