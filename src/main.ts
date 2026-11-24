@@ -708,6 +708,7 @@ function shoot(): void {
     return;
   }
   ammo--;
+  if (playerHidden) { crouching = false; playerHidden = false; player.scale.y = 1; $('#hide-button').classList.remove('active'); $('#hide-button').textContent = 'اختباء'; notify('كشف إطلاق النار موقعك؛ غادر الغطاء أو ابحث عن ساتر جديد.'); }
   // Shoot through the screen reticle so camera aim and hit detection agree.
   // The same centered reticle drives aim feedback and hit detection.
   const target = getAimedEnemy();
@@ -972,7 +973,7 @@ function animate(): void {
           updateHud();
         }
       }
-      if (distance < 3.2 && damageCooldown <= 0) {
+      if (!playerHidden && distance < 3.2 && damageCooldown <= 0) {
         health = Math.max(0, health - 8);
         damageCooldown = 0.9;
         $('#damage-flash').classList.add('active');
