@@ -146,7 +146,9 @@ const enemies: THREE.Group[] = [];
 for (let i = 0; i < 4; i++) {
   const enemy = makePerson(0x55594e, 0.95);
   enemy.position.set((i - 1.5) * 5.5, 0, -15 - (i % 2) * 5);
-  enemy.userData.patrolX = enemy.position.x;
+  enemy.userData.health = 2;
+  enemy.userData.health = 2;
+    enemy.userData.patrolX = enemy.position.x;
   enemy.userData.patrolZ = enemy.position.z;
   enemy.userData.patrolPhase = i * 1.7;
   scene.add(enemy);
@@ -276,6 +278,7 @@ function beginGame(): void {
   started = true;
   paused = false;
   $('#pause-screen').classList.remove('visible');
+  $('#victory-screen').classList.remove('visible');
   startScreen.style.display = 'none';
   if (window.matchMedia('(pointer:fine)').matches) renderer.domElement.requestPointerLock();
   notify('تحرّك نحو العلامة الذهبية في الممر.');
@@ -300,6 +303,12 @@ function resumeGame(): void {
 }
 $('#pause-button').addEventListener('click', pauseGame);
 $('#resume-button').addEventListener('click', resumeGame);
+$('#victory-restart').addEventListener('click', () => {
+  $('#victory-screen').classList.remove('visible');
+  paused = false;
+  gameOver = true;
+  beginGame();
+});
 $('#restart-button').addEventListener('click', () => {
   paused = false;
   gameOver = true;
@@ -361,7 +370,7 @@ $('#interact-hint').addEventListener('click', interact);
 window.addEventListener('blur', () => keys.clear());
 
 function shoot(): void {
-  if (!started || gameOver || ammo <= 0) {
+  if (!started || gameOver || paused || missionDone || ammo <= 0) {
     if (ammo <= 0) notify('انتهت الذخيرة في هذا النموذج التجريبي.');
     return;
   }
@@ -377,16 +386,29 @@ function shoot(): void {
       return found;
     });
     if (target) {
-      scene.remove(target);
-      const index = enemies.indexOf(target);
-      if (index >= 0) enemies.splice(index, 1);
-      const removedMeshes: THREE.Object3D[] = [];
-      target.traverse((part) => { if (part instanceof THREE.Mesh) removedMeshes.push(part); });
-      for (const part of removedMeshes) {
-        const meshIndex = enemyMeshes.indexOf(part);
-        if (meshIndex >= 0) enemyMeshes.splice(meshIndex, 1);
+      target.userData.health = Math.max(0, (target.userData.health as number) - 1);
+      if (target.userData.health > 0) {
+        target.traverse((part) => {
+          if (!(part instanceof THREE.Mesh)) return;
+          const materials = Array.isArray(part.material) ? part.material : [part.material];
+          for (const material of materials) {
+            const tint = material as THREE.MeshStandardMaterial;
+            if (tint.color) tint.color.lerp(new THREE.Color(0x9a4438), 0.38);
+          }
+        });
+        notify('أصيب الخصم. واصل التصويب لإخراجه من المواجهة.');
+      } else {
+        scene.remove(target);
+        const index = enemies.indexOf(target);
+        if (index >= 0) enemies.splice(index, 1);
+        const removedMeshes: THREE.Object3D[] = [];
+        target.traverse((part) => { if (part instanceof THREE.Mesh) removedMeshes.push(part); });
+        for (const part of removedMeshes) {
+          const meshIndex = enemyMeshes.indexOf(part);
+          if (meshIndex >= 0) enemyMeshes.splice(meshIndex, 1);
+        }
+        notify('تم إخراج خصم من المواجهة.');
       }
-      notify('تم تحييد خصم في النموذج التجريبي.');
     }
   }
   updateHud();
@@ -504,6 +526,11 @@ function animate(): void {
         notify(`لا تزال هناك ${enemies.length} تهديدات. أمّن الطريق أولاً.`);
       } else if (suppliesCollected && enemies.length === 0) {
         missionDone = true;
+        paused = true;
+        keys.clear();
+        releaseJoystick();
+        releaseSprint();
+        $('#victory-screen').classList.add('visible');
         updateHud();
         notify('اكتملت المهمة: الإمدادات جُمعت والطريق أُمّن ووصلت إلى التجمع.');
       }
