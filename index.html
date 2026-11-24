@@ -13,12 +13,12 @@
       <section id="hud" aria-live="polite">
         <header class="topbar">
           <div class="brand"><span class="brand-mark">✦</span><div><strong>ثورة الجزائر</strong><small>THE ALGERIAN REVOLUTION</small></div></div>
-          <div class="chapter"><span>الفصل الأول</span><strong>نداء الجبال</strong></div>
+          <div class="chapter"><span>الفصل الأول</span><strong>نداء الجبال</strong><button id="pause-button" type="button">Ⅱ إيقاف</button></div>
         </header>
         <div id="radar-panel"><div class="radar-title">خريطة الميدان</div><canvas id="radar" width="180" height="180" aria-label="خريطة مصغرة للميدان"></canvas><div class="radar-legend"><span>● أنت</span><span>● خصم</span><span>● إمدادات</span><span>● تجمع</span></div></div><div class="mission"><span class="eyebrow">المهمة الحالية</span><strong>استكشف الممر الجبلي</strong><p>اجمع صندوق الإمدادات أولاً، ثم توجه إلى نقطة التجمع.</p><div class="progress"><i id="mission-progress"></i></div><small id="mission-status">الهدف: الوصول إلى نقطة التجمع</small></div>
         <div class="bottom-hud"><div class="health"><span>الحالة</span><strong id="health-value">100%</strong><div class="meter"><i id="health-meter"></i></div></div><div class="ammo"><span>الذخيرة</span><strong id="ammo-value">12 / 48</strong></div><div class="stamina"><span>التحمّل</span><strong id="stamina-value">100%</strong><div class="meter"><i id="stamina-meter"></i></div></div><div class="hint" id="desktop-hint">WASD حركة · Shift ركض (يستهلك التحمّل) · Space قفز · R تلقيم · الفأرة توجيه وإطلاق</div></div>
         <div id="crosshair">+</div><div id="interact-hint">اضغط E لجمع الإمدادات</div>
-        <div id="damage-flash" aria-hidden="true"></div><div id="toast" role="status"></div>
+        <div id="pause-screen" aria-hidden="true"><div class="pause-card"><span class="eyebrow">اللعبة متوقفة مؤقتاً</span><h2>استراحة قصيرة</h2><p>المهمة محفوظة في هذه الجلسة. يمكنك متابعة اللعب أو إعادة المحاولة من البداية.</p><button id="resume-button">متابعة المهمة</button><button id="restart-button" class="secondary">إعادة المهمة</button></div></div><div id="damage-flash" aria-hidden="true"></div><div id="toast" role="status"></div>
         <div id="mobile-controls">
           <div id="joystick"><div id="stick"></div></div>
           <div class="mobile-actions"><button id="reload-button" aria-label="تلقيم">↻</button><button id="jump-button" aria-label="قفز">↑</button><button id="sprint-button" aria-label="ركض سريع">⚡</button><button id="fire-button" aria-label="إطلاق">●</button></div>

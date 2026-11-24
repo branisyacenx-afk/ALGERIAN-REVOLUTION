@@ -192,6 +192,7 @@ scene.add(supplyCache);
 
 const keys = new Set<string>();
 let started = false;
+let paused = false;
 let health = 100;
 let stamina = 100;
 let mobileSprint = false;
@@ -273,11 +274,38 @@ function beginGame(): void {
     verticalVelocity = 0; onGround = true; resetEnemies(); updateHud();
   }
   started = true;
+  paused = false;
+  $('#pause-screen').classList.remove('visible');
   startScreen.style.display = 'none';
   if (window.matchMedia('(pointer:fine)').matches) renderer.domElement.requestPointerLock();
   notify('تحرّك نحو العلامة الذهبية في الممر.');
 }
 $('#start-button').addEventListener('click', beginGame);
+
+function pauseGame(): void {
+  if (!started || gameOver || paused) return;
+  paused = true;
+  mobileSprint = false;
+  keys.clear();
+  releaseJoystick();
+  releaseSprint();
+  $('#pause-screen').classList.add('visible');
+  document.exitPointerLock?.();
+}
+function resumeGame(): void {
+  if (!paused) return;
+  paused = false;
+  $('#pause-screen').classList.remove('visible');
+  if (window.matchMedia('(pointer:fine)').matches) renderer.domElement.requestPointerLock();
+}
+$('#pause-button').addEventListener('click', pauseGame);
+$('#resume-button').addEventListener('click', resumeGame);
+$('#restart-button').addEventListener('click', () => {
+  paused = false;
+  gameOver = true;
+  $('#pause-screen').classList.remove('visible');
+  beginGame();
+});
 document.addEventListener('pointerlockchange', () => {
   if (document.pointerLockElement !== renderer.domElement && started) {
     // Keyboard movement remains available after the pointer is released.
@@ -304,6 +332,7 @@ renderer.domElement.addEventListener('pointercancel', releaseLook);
 document.addEventListener('keydown', (event) => {
   keys.add(event.code);
   if (event.code === 'Space') event.preventDefault();
+  if (event.code === 'Escape' && started && !paused && !gameOver) pauseGame();
 });
 document.addEventListener('keyup', (event) => keys.delete(event.code));
 function reloadWeapon(): void {
@@ -431,7 +460,7 @@ function animate(): void {
   marker.position.y = Math.sin(time * 2) * 0.12;
   ring.rotation.z += delta * 0.65;
 
-  if (started && !gameOver) {
+  if (started && !gameOver && !paused) {
     const inputX = (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0) + touchX;
     const inputZ = (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0) - touchY;
     forward.set(-Math.sin(yaw), 0, -Math.cos(yaw));
@@ -517,7 +546,7 @@ function animate(): void {
     const cameraTarget = player.position.clone().add(new THREE.Vector3(0, 1.35, 0));
     camera.position.lerp(cameraTarget.clone().add(cameraOffset), 1 - Math.pow(0.001, delta));
     camera.lookAt(cameraTarget);
-  } else {
+  } else if (!started) {
     camera.position.set(Math.sin(time * 0.08) * 34, 19, 35);
     camera.lookAt(0, 1, -10);
   }

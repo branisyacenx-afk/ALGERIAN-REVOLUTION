@@ -28,3 +28,12 @@ canvas{touch-action:none} .mobile-actions #reload-button{font-size:27px;backgrou
 #damage-flash{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,transparent 35%,#b3262699 100%);transition:opacity .12s}
 #damage-flash.active{opacity:1}
 @media(max-width:700px){#radar-panel{left:10px;top:78px;width:126px;padding:6px}#radar{width:110px;height:110px}.radar-legend{font-size:6px;gap:2px}.radar-title{font-size:9px}.mission{top:80px;right:10px;width:calc(100vw - 154px);min-width:150px}.mission strong{font-size:13px}}
+
+#pause-button{pointer-events:auto;margin-top:5px;padding:6px 10px;border:1px solid #d6b77a77;border-radius:7px;background:#101914aa;color:#f2e6c9;font:inherit;font-size:10px;cursor:pointer}
+#pause-screen{display:none;position:absolute;inset:0;z-index:8;place-items:center;background:#07100bd9;backdrop-filter:blur(7px);pointer-events:auto}
+#pause-screen.visible{display:grid}
+.pause-card{width:min(360px,calc(100vw - 36px));padding:26px;text-align:center;border:1px solid #c6a66a66;border-radius:16px;background:#111b16f5}
+.pause-card h2{margin:8px 0;color:#f2e6c9;font-family:Amiri,serif;font-size:34px}
+.pause-card p{font-size:13px;line-height:1.8;color:#d2cbb8}
+.pause-card button{width:100%;margin-top:10px;padding:12px;border:0;border-radius:8px;background:#c6a66a;color:#172018;font:inherit;font-weight:700}
+.pause-card button.secondary{background:#3b493f;color:#f2e6c9;border:1px solid #ffffff33}
