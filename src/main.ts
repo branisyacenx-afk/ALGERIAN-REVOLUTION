@@ -1111,8 +1111,13 @@ let touchY = 0;
 let joystickPointer: number | null = null;
 function updateJoystick(event: PointerEvent): void {
   const rect = joystick.getBoundingClientRect();
-  const dx = event.clientX - (rect.left + rect.width / 2);
-  const dy = event.clientY - (rect.top + rect.height / 2);
+  const screenDx = event.clientX - (rect.left + rect.width / 2);
+  const screenDy = event.clientY - (rect.top + rect.height / 2);
+  // The whole app is rotated 90° on portrait phones. Pointer coordinates are
+  // still reported in physical screen axes, so convert them back to the
+  // joystick's unrotated local axes before calculating movement.
+  const dx = isPortraitTouch() ? screenDy : screenDx;
+  const dy = isPortraitTouch() ? -screenDx : screenDy;
   const max = Math.min(rect.width, rect.height) * 0.36;
   const rawLength = Math.hypot(dx, dy);
   const deadZone = max * 0.12;
