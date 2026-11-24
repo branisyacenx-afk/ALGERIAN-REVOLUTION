@@ -248,7 +248,6 @@ function shoot(): void {
     return;
   }
   ammo--;
-  const origin = player.position.clone().add(new THREE.Vector3(0, 1.35, 0));
   // Shoot through the screen reticle so camera aim and hit detection agree.
   raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
   raycaster.far = 60;
