@@ -57,7 +57,7 @@ canvas{touch-action:none} .mobile-actions #reload-button{font-size:27px;backgrou
   .mobile-actions{display:grid;grid-template-columns:repeat(2,52px);gap:8px}
   .mobile-actions button{width:52px;height:52px;font-size:19px;box-shadow:0 4px 14px #0008}
   .mobile-actions #fire-button{grid-column:1/3;width:112px;height:58px;border-radius:16px;background:#a33e32ee;font-size:15px;font-weight:800}
-  #look-area{display:block;position:absolute;z-index:2;right:0;top:18%;width:48%;height:54%;touch-action:none;pointer-events:auto}
+  #look-area{display:block;position:absolute;z-index:3;right:0;top:0;bottom:0;width:55%;height:auto;touch-action:none;pointer-events:auto;overscroll-behavior:contain;user-select:none;-webkit-user-select:none}
   #look-area span{position:absolute;right:16px;top:45%;padding:7px 10px;border:1px solid #ffffff35;border-radius:9px;background:#10191455;color:#fff9;font-size:11px;text-align:center;pointer-events:none}
   #mobile-controls{z-index:4}
   .bottom-hud{bottom:12px;left:160px;right:150px;justify-content:center}
@@ -267,3 +267,10 @@ body:not(.game-started) #camera-zoom-controls{display:none}
 #crosshair .reticle-hit{inset:-8px!important;font-size:24px!important;line-height:30px!important}
 #crosshair.aiming{transform:translate(-50%,-50%) scale(.9)!important}
 @media(max-width:900px){#crosshair{width:30px!important;height:30px!important}#crosshair .reticle-top,#crosshair .reticle-bottom{height:7px!important;width:2px!important}#crosshair .reticle-left,#crosshair .reticle-right{width:7px!important;height:2px!important}}
+
+/* Reliable touch camera zone on mobile browsers and embedded webviews. */
+@media(max-width:900px) and (pointer:coarse){
+  #look-area{touch-action:none!important;-webkit-user-select:none;user-select:none}
+  #look-area span{pointer-events:none}
+  #mobile-controls,#camera-zoom-controls,#pickup-button,#interact-hint{z-index:5}
+}

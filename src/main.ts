@@ -420,22 +420,30 @@ document.addEventListener('mousemove', (event) => {
   pitch = THREE.MathUtils.clamp(pitch - event.movementY * 0.0026, -0.72, 0.45);
 });
 const lookArea = $('#look-area');
+lookArea.addEventListener('contextmenu', (event) => event.preventDefault());
 lookArea.addEventListener('pointerdown', (event) => {
-  if (event.pointerType !== 'touch' || !started || paused) return;
+  if (!started || paused || gameOver || missionDone) return;
+  // Accept touch and pen input; capture the pointer so camera movement
+  // continues smoothly even if the finger drifts beyond the look zone.
+  event.preventDefault();
   lookPointer = event.pointerId;
   lastTouchX = event.clientX; lastTouchY = event.clientY;
-  lookArea.setPointerCapture(event.pointerId);
+  try { lookArea.setPointerCapture(event.pointerId); } catch { /* capture may be unavailable in embedded browsers */ }
 });
 lookArea.addEventListener('pointermove', (event) => {
-  if (event.pointerType !== 'touch' || lookPointer !== event.pointerId) return;
+  if (lookPointer !== event.pointerId || !started || paused) return;
+  event.preventDefault();
   const dx = event.clientX - lastTouchX; const dy = event.clientY - lastTouchY;
   lastTouchX = event.clientX; lastTouchY = event.clientY;
-  yaw -= dx * 0.009;
-  pitch = THREE.MathUtils.clamp(pitch - dy * 0.006, -0.72, 0.42);
+  yaw -= dx * (aiming ? 0.0065 : 0.0085);
+  pitch = THREE.MathUtils.clamp(pitch - dy * (aiming ? 0.0048 : 0.006), -0.72, 0.42);
 });
-const releaseLook = (event: PointerEvent) => { if (lookPointer === event.pointerId) lookPointer = null; };
+const releaseLook = (event: PointerEvent) => {
+  if (lookPointer === event.pointerId) lookPointer = null;
+};
 lookArea.addEventListener('pointerup', releaseLook);
 lookArea.addEventListener('pointercancel', releaseLook);
+lookArea.addEventListener('lostpointercapture', releaseLook);
 document.addEventListener('keydown', (event) => {
   keys.add(event.code);
   if (event.code === 'Space') event.preventDefault();
