@@ -283,7 +283,7 @@ let lastTouchX = 0;
 let lastTouchY = 0;
 let yaw = 0;
 let pitch = -0.10;
-let cameraDistance = 7.2; aiming = false; $('#aim-button').classList.remove('active');
+let cameraDistance = 7.2;
 let aiming = false;
 let verticalVelocity = 0;
 let onGround = true;
