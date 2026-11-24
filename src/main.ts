@@ -117,10 +117,12 @@ function makePerson(color: number, scale = 1): THREE.Group {
   belt.position.y = 0.91; group.add(belt);
   for (const side of [-1, 1]) {
     const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.135, 0.48, 4, 7), trousers);
+    leg.userData.motionRole = side < 0 ? 'leftLeg' : 'rightLeg';
     leg.position.set(side * 0.17, 0.48, 0); leg.castShadow = true; group.add(leg);
     const boot = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.34), leather);
     boot.position.set(side * 0.17, 0.12, -0.055); boot.castShadow = true; group.add(boot);
     const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.105, 0.48, 4, 7), cloth);
+    arm.userData.motionRole = side < 0 ? 'leftArm' : 'rightArm';
     arm.position.set(side * 0.43, 1.24, 0); arm.rotation.z = side * -0.12; arm.castShadow = true; group.add(arm);
     const hand = new THREE.Mesh(new THREE.SphereGeometry(0.105, 8, 7), skin);
     hand.position.set(side * 0.45, 0.91, -0.02); group.add(hand);
@@ -188,6 +190,8 @@ scene.add(supplyCache);
 const keys = new Set<string>();
 let started = false;
 let health = 100;
+let stamina = 100;
+let mobileSprint = false;
 let ammo = 12;
 let reserveAmmo = 48;
 let missionDone = false;
@@ -227,6 +231,8 @@ function notify(message: string): void {
 function updateHud(): void {
   $('#health-value').textContent = `${health}%`;
   $('#health-meter').style.width = `${health}%`;
+  $('#stamina-value').textContent = `${Math.round(stamina)}%`;
+  $('#stamina-meter').style.width = `${stamina}%`;
   $('#ammo-value').textContent = `${ammo} / ${reserveAmmo}`;
   const progress = missionDone ? 100 : !suppliesCollected ? 0 : enemies.length > 0 ? 33 : 66;
   $('#mission-progress').style.width = `${progress}%`;
@@ -253,7 +259,7 @@ function resetEnemies(): void {
 }
 function beginGame(): void {
   if (gameOver) {
-    health = 100; ammo = 12; reserveAmmo = 48; missionDone = false; suppliesCollected = false; goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false; gameOver = false;
+    health = 100; stamina = 100; ammo = 12; reserveAmmo = 48; missionDone = false; suppliesCollected = false; goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false; gameOver = false;
     supplyCache.visible = true;
     player.position.set(0, 0, 9); player.rotation.set(0, 0, 0);
     verticalVelocity = 0; onGround = true; resetEnemies(); updateHud();
@@ -351,6 +357,12 @@ function shoot(): void {
 document.addEventListener('mousedown', (event) => { if (event.button === 0) shoot(); });
 $('#fire-button').addEventListener('click', shoot);
 $('#jump-button').addEventListener('click', () => { if (started && !gameOver && onGround) { verticalVelocity = 6.2; onGround = false; } });
+const sprintButton = $('#sprint-button');
+sprintButton.addEventListener('pointerdown', (event) => { event.preventDefault(); mobileSprint = true; sprintButton.classList.add('active'); });
+const releaseSprint = () => { mobileSprint = false; sprintButton.classList.remove('active'); };
+sprintButton.addEventListener('pointerup', releaseSprint);
+sprintButton.addEventListener('pointercancel', releaseSprint);
+sprintButton.addEventListener('lostpointercapture', releaseSprint);
 
 const joystick = $('#joystick');
 const stick = $('#stick');
@@ -388,9 +400,22 @@ function animate(): void {
     direction.set(0, 0, 0).addScaledVector(right, inputX).addScaledVector(forward, inputZ);
     if (direction.lengthSq() > 0.01) {
       direction.normalize();
-      const speed = keys.has('ShiftLeft') ? 8.5 : 5.2;
+      const sprinting = (keys.has('ShiftLeft') || keys.has('ShiftRight') || mobileSprint) && stamina > 1;
+      const speed = sprinting ? 8.2 : 5.2;
+      stamina = THREE.MathUtils.clamp(stamina + (sprinting ? -30 : 19) * delta, 0, 100);
       player.position.addScaledVector(direction, speed * delta);
+      const stride = Math.sin(time * (sprinting ? 13 : 8)) * (sprinting ? 0.62 : 0.38);
+      player.traverse((part) => {
+        if (!(part instanceof THREE.Mesh)) return;
+        const role = part.userData.motionRole as string | undefined;
+        if (role === 'leftLeg' || role === 'rightArm') part.rotation.x = stride;
+        if (role === 'rightLeg' || role === 'leftArm') part.rotation.x = -stride;
+      });
       player.rotation.y = Math.atan2(-direction.x, -direction.z);
+    }
+    if (direction.lengthSq() <= 0.01) {
+      stamina = THREE.MathUtils.clamp(stamina + 24 * delta, 0, 100);
+      player.traverse((part) => { if (part instanceof THREE.Mesh && part.userData.motionRole) part.rotation.x *= Math.max(0, 1 - delta * 8); });
     }
     if (keys.has('Space') && onGround) { verticalVelocity = 6.2; onGround = false; }
     verticalVelocity -= 17 * delta;
