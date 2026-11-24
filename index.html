@@ -13,10 +13,10 @@
       <section id="hud" aria-live="polite">
         <header class="topbar">
           <div class="brand"><span class="brand-mark">✦</span><div><strong>ثورة الجزائر</strong><small>المهمة الأولى · ساحة المعركة</small></div></div>
-          <div class="chapter"><span>الفصل الأول</span><strong>تأمين المنطقة</strong><button id="pause-button" type="button">Ⅱ إيقاف</button></div>
+          <div class="chapter"><span id="chapter-label">شرارة نوفمبر · الأوراس</span><strong>حملة التحرير 1954–1962</strong><button id="pause-button" type="button">Ⅱ إيقاف</button></div>
         </header>
         <div id="radar-panel"><div class="radar-title">الخريطة</div><canvas id="radar" width="180" height="180" aria-label="Mini-carte tactique"></canvas><div class="radar-legend"><span>● أنت</span><span>● عدو</span><span>● صندوق</span><span>● تجمع</span></div></div>
-        <div class="mission"><span class="eyebrow" id="stage-label">المرحلة 1 / 100</span><strong id="mission-title">تأمين الممر</strong><p>استرجع صندوق الإمدادات، أسقط الأعداء، ثم توجه إلى نقطة التجمع.</p><div class="progress"><i id="mission-progress"></i></div><small id="mission-status">Objectif : rejoindre la zone</small></div>
+        <div class="mission"><span class="eyebrow" id="stage-label">المرحلة 1 / 100</span><strong id="mission-title">تأمين الممر</strong><p id="mission-description">بداية الثورة في جبال الأوراس وممراتها الوعرة.</p><div class="progress"><i id="mission-progress"></i></div><small id="mission-status">Objectif : rejoindre la zone</small></div>
         <div class="bottom-hud">
           <div class="health"><span>الصحة</span><strong id="health-value">100%</strong><div class="meter"><i id="health-meter"></i></div></div>
           <div class="ammo"><span>الذخيرة</span><strong id="ammo-value">12 / 48</strong></div>
@@ -33,7 +33,7 @@
         </div>
         <div id="look-area" aria-label="منطقة تحريك الكاميرا"></div>
         <div id="interact-hint">APPUYEZ POUR RÉCUPÉRER</div>
-        <div id="victory-screen" aria-hidden="true"><div class="pause-card victory-card"><span class="eyebrow">حملة التحرير · 100 مرحلة</span><h2 id="victory-heading">اكتملت المرحلة 1 من 100</h2><p>تم تأمين القطاع. استعد للعملية التالية.</p><div class="victory-stats"><span>الإمدادات<strong>مسترجعة</strong></span><span>التهديدات<strong>تمت إزالتها</strong></span><span>التجمع<strong>تم الوصول</strong></span></div><button id="victory-next">المرحلة التالية ←</button><button id="victory-restart" class="secondary">إعادة المرحلة</button></div></div>
+        <div id="victory-screen" aria-hidden="true"><div class="pause-card victory-card"><span class="eyebrow">حملة التحرير · 100 مرحلة</span><h2 id="victory-heading">اكتملت المرحلة 1 من 100</h2><p id="victory-copy">تم تأمين القطاع. استعد للمهمة التالية في منطقة وزمن مختلفين.</p><div class="victory-stats"><span>الإمدادات<strong>مسترجعة</strong></span><span>التهديدات<strong>تمت إزالتها</strong></span><span>التجمع<strong>تم الوصول</strong></span></div><button id="victory-next">المرحلة التالية ←</button><button id="victory-restart" class="secondary">إعادة المرحلة</button></div></div>
         <div id="pause-screen" aria-hidden="true"><div class="pause-card"><span class="eyebrow">PAUSE</span><h2>Mission suspendue</h2><p>Votre progression est conservée pendant cette session.</p><button id="resume-button">REPRENDRE</button><button id="restart-button" class="secondary">RECOMMENCER</button></div></div>
         <div id="damage-flash" aria-hidden="true"></div><div id="toast" role="status"></div>
         <div id="mobile-controls">
@@ -51,7 +51,7 @@
           <span class="eyebrow">نسخة تجريبية · مهمة قابلة للعب</span>
           <h1>ALGERIAN REVOLUTION</h1>
           <p>Une mission d'action en 3D dans un environnement montagneux inspiré de l'Algérie. Les soldats sont des personnages 3D animés ; la scène est une représentation fictive et non une reconstitution historique certifiée.</p>
-          <div class="identity-strip"><span class="flag">🇩🇿</span><span>الزي الجزائري</span><span>🏔️ تضاريس جبلية</span><span>🌿 أماكن الاحتماء</span><span class="flag">🇫🇷</span><span>الزي الفرنسي</span></div>
+          <div class="identity-strip"><span class="flag">🇩🇿</span><span>100 مهمة تاريخية الطابع</span><span>10 مناطق جزائرية</span><span>1954 → 1962</span></div><div class="historic-roster"><strong>شخصيات تاريخية ضمن سجل الحملة</strong><div><b>قادة الثورة:</b> مصطفى بن بولعيد · ديدوش مراد · العربي بن مهيدي · عميروش · علي لابوانت</div><div><b>ضباط فرنسيون:</b> جاك ماسو · راوول سالان · موريس شال · مارسيل بيجار · هنري لوريو · جان كريبان · فرناند غامبييه · شارل أيلريه · ميشال فوركيه · بول شيريير</div><small>السجل التاريخي لا يعني أن الوجوه ثلاثية الأبعاد مطابقة للأشخاص الحقيقيين؛ النماذج القتالية الحالية عامة.</small></div>
           <div class="outfit-picker"><strong>CHOISIR L'ÉQUIPEMENT</strong><button id="outfit-algerian" type="button">🇩🇿 Tenue algérienne</button><button id="outfit-french" type="button">🇫🇷 Tenue française</button><small>أزياء مبسطة داخل اللعبة.</small></div>
           <div class="howto"><strong>طريقة التحكم</strong><ol>
             <li><b>الحركة:</b> حرّك العصا أسفل اليسار.</li>
