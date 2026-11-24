@@ -412,6 +412,10 @@ for(const x of [-0.23,0.23]) {
 kitMesh(new THREE.CylinderGeometry(0.23,0.24,0.16,12),0x344252,new THREE.Vector3(0,2.02,0),frenchKit);
 kitMesh(new THREE.BoxGeometry(0.34,0.045,0.25),0x202a34,new THREE.Vector3(0,1.98,-0.08),frenchKit);
 kitMesh(new THREE.BoxGeometry(0.08,0.16,0.08),0xc0a15e,new THREE.Vector3(0,1.83,-0.24),frenchKit);
+// A visible Algerian flag patch is fixed to the upper back of the field pack.
+const backFlag = new THREE.Mesh(new THREE.PlaneGeometry(0.34,0.22), new THREE.MeshStandardMaterial({map:flagTexture,side:THREE.DoubleSide,roughness:0.9}));
+backFlag.position.set(0,1.38,0.405); backFlag.castShadow=true; algerianKit.add(backFlag);
+uniformLayer.userData.keepOnCharacter = true;
 uniformLayer.add(algerianKit,frenchKit); player.add(uniformLayer);
 algerianKit.visible=true; frenchKit.visible=false;
 
@@ -628,6 +632,23 @@ let reserveAmmo = 48;
 let reloading = false;
 let fireHoldTimer: number | null = null;
 let missionDone = false;
+let campaignStage = Math.max(1, Math.min(100, Number(localStorage.getItem('algerian-revolution-stage') || 1)));
+const campaignSectors = [
+  { name:'جبال الأوراس', x:0, z:-25 },
+  { name:'ممرات القبائل', x:170, z:-120 },
+  { name:'غابات جرجرة', x:350, z:-300 },
+  { name:'سهول الحضنة', x:500, z:80 },
+  { name:'مرتفعات الونشريس', x:260, z:360 },
+  { name:'جبال الظهرة', x:-120, z:470 },
+  { name:'غابات الزيبان', x:-410, z:280 },
+  { name:'ممرات الونشريس الغربية', x:-560, z:-80 },
+  { name:'جبال النمامشة', x:-350, z:-420 },
+  { name:'الحدود الشمالية', x:100, z:-600 }
+];
+const campaignOperations = ['تأمين الممر','تحرير القرية','تدمير مركز القيادة','إنقاذ المجموعة','استعادة الإمدادات','اقتحام الحصن','حماية نقطة التجمع','قطع طريق الإمداد','تطهير الغابة','السيطرة على المرتفع'];
+const campaignStageTitle = (stage:number) => campaignOperations[(stage-1)%10];
+const campaignSector = (stage:number) => campaignSectors[Math.floor((stage-1)/10)];
+
 let suppliesCollected = false;
 let goalNeedsSuppliesNotified = false;
 let goalNeedsEnemiesNotified = false;
@@ -698,7 +719,7 @@ function updateHud(): void {
   $('#stamina-value').textContent = `${Math.round(stamina)}%`;
   $('#stamina-meter').style.width = `${stamina}%`;
   $('#ammo-value').textContent = `${ammo} / ${reserveAmmo}`;
-  const progress = missionDone ? 100 : !suppliesCollected ? 0 : enemies.length > 0 ? 33 : 66;
+  const progress = missionDone ? 100 : !suppliesCollected ? 0 : enemies.length > 0 ? 45 : 75;
   $('#mission-progress').style.width = `${progress}%`;
   $('#mission-status').textContent = missionDone
     ? 'اكتملت المهمة — وصلت إلى نقطة التجمع!'
@@ -709,7 +730,29 @@ function updateHud(): void {
         : '3/3: أمّن الممر وتوجه إلى نقطة التجمع';
 }
 
-function resetEnemies(): void {
+function updateCampaignHeader(): void {
+  const sector = campaignSector(campaignStage);
+  $('#stage-label').textContent = `المرحلة ${campaignStage} / 100 · ${sector.name}`;
+  $('#mission-title').textContent = campaignStageTitle(campaignStage);
+  $('#mission-status').textContent = `القطاع: ${sector.name} · المهمة ${campaignStage} من 100`;
+}
+function configureCampaignStage(): void {
+  const sector = campaignSector(campaignStage);
+  const base = new THREE.Vector3(sector.x,0,sector.z);
+  player.position.copy(base).add(new THREE.Vector3(0,0,18));
+  player.rotation.set(0,0,0);
+  supplyCache.position.copy(base).add(new THREE.Vector3(-8,0,-17));
+  supplyCache.visible = true;
+  marker.position.copy(base).add(new THREE.Vector3(5,0,-54));
+  flagGroup.position.copy(base).add(new THREE.Vector3(-8,0,-38));
+  missionDone = false; suppliesCollected = false;
+  goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false;
+  const count = Math.min(13, 4 + Math.floor((campaignStage-1)/9));
+  resetEnemies(count, base);
+  updateCampaignHeader();
+  updateHud();
+}
+function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
   for (const enemy of enemies) {
     const mixer = enemy.userData.characterMixer as THREE.AnimationMixer | undefined;
     if (mixer) { mixer.stopAllAction(); const index = characterMixers.indexOf(mixer); if (index >= 0) characterMixers.splice(index, 1); }
@@ -732,14 +775,12 @@ function resetEnemies(): void {
   }
 }
 function beginGame(): void {
-  if (gameOver) {
-    health = 100; stamina = 100; damageCooldown = 0; ammo = 12; reserveAmmo = 48; missionDone = false; suppliesCollected = false; goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false; gameOver = false;
-    supplyCache.visible = true;
-    player.position.set(0, 0, 9); player.rotation.set(0, 0, 0); player.scale.set(1,1,1); crouching = false; playerHidden = false; $('#hide-button').classList.remove('active'); $('#hide-button').innerHTML = '<span>▣</span><small>احتماء</small>';
-    yaw = 0; pitch = -0.10; cameraDistance = 5.8;
-    verticalVelocity = 0; onGround = true; resetEnemies(); updateHud();
-document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
-  }
+  health = 100; stamina = 100; damageCooldown = 0; ammo = 12; reserveAmmo = 48;
+  gameOver = false; reloading = false; aiming = false; crouching = false; playerHidden = false;
+  player.scale.set(1,1,1); $('#hide-button').classList.remove('active'); $('#hide-button').innerHTML = '<span>▣</span><small>احتماء</small>';
+  yaw = 0; pitch = -0.10; cameraDistance = 8.4; verticalVelocity = 0; onGround = true;
+  configureCampaignStage();
+  document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
   started = true;
   document.body.classList.add('game-started');
   paused = false;
@@ -785,6 +826,13 @@ function resumeGame(): void {
 }
 $('#pause-button').addEventListener('click', pauseGame);
 $('#resume-button').addEventListener('click', resumeGame);
+$('#victory-next').addEventListener('click', () => {
+  if (campaignStage >= 100) return;
+  campaignStage += 1;
+  localStorage.setItem('algerian-revolution-stage', String(campaignStage));
+  $('#victory-screen').classList.remove('visible');
+  paused = false; gameOver = false; beginGame();
+});
 $('#victory-restart').addEventListener('click', () => {
   $('#victory-screen').classList.remove('visible');
   paused = false;
@@ -1162,6 +1210,10 @@ function animate(): void {
         releaseJoystick();
         releaseSprint();
         $('#victory-screen').classList.add('visible');
+        const nextButton = $('#victory-next') as HTMLButtonElement;
+        nextButton.textContent = campaignStage >= 100 ? 'إنهاء الحملة' : 'المرحلة التالية ←';
+        nextButton.disabled = campaignStage >= 100;
+        $('#victory-heading').textContent = campaignStage >= 100 ? 'اكتملت حملة التحرير' : `اكتملت المرحلة ${campaignStage} من 100`;
         updateHud();
         notify('Mission accomplie !');
       }

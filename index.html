@@ -16,7 +16,7 @@
           <div class="chapter"><span>الفصل الأول</span><strong>تأمين المنطقة</strong><button id="pause-button" type="button">Ⅱ إيقاف</button></div>
         </header>
         <div id="radar-panel"><div class="radar-title">الخريطة</div><canvas id="radar" width="180" height="180" aria-label="Mini-carte tactique"></canvas><div class="radar-legend"><span>● أنت</span><span>● عدو</span><span>● صندوق</span><span>● تجمع</span></div></div>
-        <div class="mission"><span class="eyebrow">المهمة الحالية</span><strong>تأمين الممر الجبلي</strong><p>استرجع صندوق الإمدادات، أسقط الأعداء، ثم توجه إلى نقطة التجمع.</p><div class="progress"><i id="mission-progress"></i></div><small id="mission-status">Objectif : rejoindre la zone</small></div>
+        <div class="mission"><span class="eyebrow" id="stage-label">المرحلة 1 / 100</span><strong id="mission-title">تأمين الممر</strong><p>استرجع صندوق الإمدادات، أسقط الأعداء، ثم توجه إلى نقطة التجمع.</p><div class="progress"><i id="mission-progress"></i></div><small id="mission-status">Objectif : rejoindre la zone</small></div>
         <div class="bottom-hud">
           <div class="health"><span>الصحة</span><strong id="health-value">100%</strong><div class="meter"><i id="health-meter"></i></div></div>
           <div class="ammo"><span>الذخيرة</span><strong id="ammo-value">12 / 48</strong></div>
@@ -33,7 +33,7 @@
         </div>
         <div id="look-area" aria-label="منطقة تحريك الكاميرا"></div>
         <div id="interact-hint">APPUYEZ POUR RÉCUPÉRER</div>
-        <div id="victory-screen" aria-hidden="true"><div class="pause-card victory-card"><span class="eyebrow">CHAPITRE 01 · TERMINÉ</span><h2>Mission accomplie</h2><p>La caisse est récupérée, la zone est sécurisée et le point de ralliement est atteint.</p><div class="victory-stats"><span>Ravitaillement<strong>Récupéré</strong></span><span>Menaces<strong>Neutralisées</strong></span><span>Ralliement<strong>Atteint</strong></span></div><button id="victory-restart">REJOUER LA MISSION</button></div></div>
+        <div id="victory-screen" aria-hidden="true"><div class="pause-card victory-card"><span class="eyebrow">حملة التحرير · 100 مرحلة</span><h2 id="victory-heading">اكتملت المرحلة 1 من 100</h2><p>تم تأمين القطاع. استعد للعملية التالية.</p><div class="victory-stats"><span>الإمدادات<strong>مسترجعة</strong></span><span>التهديدات<strong>تمت إزالتها</strong></span><span>التجمع<strong>تم الوصول</strong></span></div><button id="victory-next">المرحلة التالية ←</button><button id="victory-restart" class="secondary">إعادة المرحلة</button></div></div>
         <div id="pause-screen" aria-hidden="true"><div class="pause-card"><span class="eyebrow">PAUSE</span><h2>Mission suspendue</h2><p>Votre progression est conservée pendant cette session.</p><button id="resume-button">REPRENDRE</button><button id="restart-button" class="secondary">RECOMMENCER</button></div></div>
         <div id="damage-flash" aria-hidden="true"></div><div id="toast" role="status"></div>
         <div id="mobile-controls">

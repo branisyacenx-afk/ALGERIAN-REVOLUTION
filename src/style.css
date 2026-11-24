@@ -456,3 +456,8 @@ body{font-family:'IBM Plex Sans Arabic',Arial,sans-serif}
  #camera-zoom-controls button{width:25px!important;min-width:25px!important;height:25px!important}
  #camera-zoom-controls #camera-mode-toggle{width:36px!important;min-width:36px!important;height:25px!important;font-size:7px!important}
 }
+
+#stage-label{display:block;color:#e0c58e;font-weight:700;font-size:11px;margin-bottom:4px}
+#mission-title{display:block}
+#victory-next{background:#c6a66a!important;color:#172018!important;border:0!important}
+#victory-restart.secondary{margin-top:8px;background:#253329!important;color:#f2e6c9!important}
