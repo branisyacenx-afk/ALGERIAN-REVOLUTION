@@ -457,7 +457,7 @@ player.add(weapon);
 const enemies: THREE.Group[] = [];
 for (let i = 0; i < 6; i++) {
   const enemy = makePerson(0x55594e, 0.95);
-  enemy.position.set((i - 1.5) * 5.5, 0, -15 - (i % 2) * 5);
+  enemy.position.set(base.x + (i - (count - 1) / 2) * 4.4, 0, base.z - 15 - (i % 3) * 5);
   enemy.userData.health = 2;
   enemy.userData.fireCooldown = 1.0 + i * 0.18;
     enemy.userData.role = i % 6 === 0 ? 'sniper' : 'rifle';
@@ -794,7 +794,8 @@ function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
     if (soldierTemplate) attachSoldierModel(enemy, 0x858b7b);
     enemy.position.set((i - 1.5) * 5.5, 0, -15 - (i % 2) * 5);
     enemy.userData.health = 2;
-    enemy.userData.fireCooldown = 1.2 + i * 0.35;
+    enemy.userData.fireCooldown = 1.0 + i * 0.18;
+    enemy.userData.role = i % 6 === 0 ? 'sniper' : 'rifle';
     enemy.userData.patrolX = enemy.position.x;
     enemy.userData.patrolZ = enemy.position.z;
     enemy.userData.patrolPhase = i * 1.7;
@@ -1261,13 +1262,6 @@ aircraft.position.set(-95,55,-120);aircraft.rotation.y=-.45;aircraft.traverse(o=
 addFieldTent(-17,-47,.2);addFieldTent(-8,-51,-.2);addFieldTent(16,-92,.5);
 addTrench(-25,-31,19,.18);addTrench(34,-112,24,-.4);addCaveMouth(47,-86);
 addArmoredTank(-16,-82,.2,0x59614a,2.8);
-const battleSniperPositions=[[-42,-38],[44,-57],[57,-101],[-52,-119]];
-for(let i=0;i<battleSniperPositions.length;i++){
-  const [x,z]=battleSniperPositions[i];
-  const post=makePerson(0x4b5547,.94);post.position.set(x,0,z);post.userData.health=3;post.userData.fireCooldown=2+i*.5;post.userData.patrolX=x;post.userData.patrolZ=z;post.userData.patrolPhase=i*2;post.userData.role='sniper';scene.add(post);enemies.push(post);
-  if(soldierTemplate)attachSoldierModel(post,0x7f8976);
-  post.traverse(part=>{if(part instanceof THREE.Mesh)enemyMeshes.push(part);});
-}
 for(let i=0;i<10;i++){
   const ally=makePerson(0x354c3b,.94);ally.position.set((i-4.5)*2.2,0,13+(i%3)*2);ally.userData.squadIndex=i;
   scene.add(ally);battleAllies.push(ally);if(soldierTemplate)attachSoldierModel(ally,0x687957);
