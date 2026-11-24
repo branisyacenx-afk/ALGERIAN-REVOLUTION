@@ -34,9 +34,6 @@ document.addEventListener('click', (event) => {
   if (!(target instanceof Element)) return;
   const button = target.closest<HTMLButtonElement>('#start-button, #missions-start');
   if (!button || button.disabled) return;
-
-  // This capture-phase handler owns the launch action. It does not depend on
-  // listeners registered later in the module, which may not have initialized.
   event.preventDefault();
   event.stopImmediatePropagation();
   button.dataset.originalLabel ||= button.innerHTML;
@@ -44,14 +41,16 @@ document.addEventListener('click', (event) => {
   const label = button.querySelector('b') || button;
   if (label instanceof HTMLElement) label.textContent = 'جارٍ دخول ساحة المعركة…';
   if (launchAttemptTimer !== null) window.clearTimeout(launchAttemptTimer);
-  try {
-    closeMissionBriefing();
-    beginGame();
-  } catch (error) {
-    console.error('Early mission launch failed:', error);
-    const detail = error instanceof Error ? error.message : String(error);
-    showStartupFailure('تعذر تشغيل المعركة: ' + detail);
-  }
+  window.setTimeout(() => {
+    try {
+      beginGame();
+    } catch (error) {
+      console.error('Early mission launch failed:', error);
+      const detail = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack || '' : '';
+      showStartupFailure('تعذر تشغيل المعركة: ' + detail + (stack ? '\\n' + stack.slice(0,900) : ''));
+    }
+  }, 0);
 }, true);
 
 const root = document.querySelector<HTMLDivElement>('#game-root');
@@ -908,7 +907,6 @@ function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
     enemy.traverse((part) => { if (part instanceof THREE.Mesh) enemyMeshes.push(part); });
   }
 }
-let cinematicTimer: number | null = null;
 function launchMissionBriefing(): void {
   // Reliability-first entry: start the playable scene directly. The briefing
   // overlay is intentionally skipped until the start flow is verified stable.
@@ -916,14 +914,10 @@ function launchMissionBriefing(): void {
   beginGame();
 }
 function closeMissionBriefing(): void {
-  if (cinematicTimer !== null) window.clearTimeout(cinematicTimer);
-  cinematicTimer = null;
   $('#mission-cinematic').classList.remove('visible');
   $('#mission-cinematic').setAttribute('aria-hidden','true');
 }
 function beginGame(): void {
-  if (cinematicTimer !== null) window.clearTimeout(cinematicTimer);
-  cinematicTimer = null;
   $('#mission-cinematic').classList.remove('visible');
   $('#mission-cinematic').setAttribute('aria-hidden','true');
 
