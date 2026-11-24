@@ -571,7 +571,7 @@ function showGameOver(): void {
   gameOver = true; started = false; paused = false;
   releaseJoystick(); releaseSprint(); stopFiring();
   document.body.classList.remove('game-started');
-  $('#start-button').textContent = 'RÉESSAYER';
+  $('#start-button').textContent = 'إعادة المحاولة';
   startScreen.style.display = 'grid';
   notify('Vous êtes tombé au combat. Recommencez la mission.');
 }
@@ -584,12 +584,12 @@ function updateHud(): void {
   const progress = missionDone ? 100 : !suppliesCollected ? 0 : enemies.length > 0 ? 33 : 66;
   $('#mission-progress').style.width = `${progress}%`;
   $('#mission-status').textContent = missionDone
-    ? 'Mission terminée — point de ralliement atteint !'
+    ? 'اكتملت المهمة — وصلت إلى نقطة التجمع!'
     : !suppliesCollected
-      ? '1/3 : récupérez la caisse (E)'
+      ? '1/3: استرجع صندوق الإمدادات'
       : enemies.length > 0
-        ? `2/3 : neutralisez les ennemis (${enemies.length})`
-        : '3/3 : passage sécurisé, rejoignez le ralliement';
+        ? `2/3: أسقط الأعداء المتبقين (${enemies.length})`
+        : '3/3: أمّن الممر وتوجه إلى نقطة التجمع';
 }
 
 function resetEnemies(): void {
@@ -618,7 +618,7 @@ function beginGame(): void {
   if (gameOver) {
     health = 100; stamina = 100; damageCooldown = 0; ammo = 12; reserveAmmo = 48; missionDone = false; suppliesCollected = false; goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false; gameOver = false;
     supplyCache.visible = true;
-    player.position.set(0, 0, 9); player.rotation.set(0, 0, 0); player.scale.set(1,1,1); crouching = false; playerHidden = false; $('#hide-button').classList.remove('active'); $('#hide-button').innerHTML = '<span>▣</span><small>COUVERT</small>';
+    player.position.set(0, 0, 9); player.rotation.set(0, 0, 0); player.scale.set(1,1,1); crouching = false; playerHidden = false; $('#hide-button').classList.remove('active'); $('#hide-button').innerHTML = '<span>▣</span><small>احتماء</small>';
     yaw = 0; pitch = -0.10; cameraDistance = 5.8;
     verticalVelocity = 0; onGround = true; resetEnemies(); updateHud();
 document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
@@ -887,11 +887,11 @@ function toggleHide(): void {
   if (!crouching) {
     if (!isPlayerInCover()) { notify('Approchez-vous des buissons ou des fortifications pour vous mettre à couvert.'); return; }
     crouching = true; playerHidden = true; player.scale.y = 0.72;
-    $('#hide-button').classList.add('active'); $('#hide-button').innerHTML = '<span>↗</span><small>SORTIR</small>';
+    $('#hide-button').classList.add('active'); $('#hide-button').innerHTML = '<span>↗</span><small>خروج</small>';
     notify('Vous êtes à couvert. Restez dans cette zone pour ne pas être repéré.');
   } else {
     crouching = false; playerHidden = false; player.scale.y = 1;
-    $('#hide-button').classList.remove('active'); $('#hide-button').textContent = 'اختباء';
+    $('#hide-button').classList.remove('active'); $('#hide-button').innerHTML = '<span>▣</span><small>احتماء</small>';
     notify('Vous avez quitté votre couverture.');
   }
 }
