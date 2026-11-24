@@ -283,7 +283,8 @@ let lastTouchX = 0;
 let lastTouchY = 0;
 let yaw = 0;
 let pitch = -0.10;
-let cameraDistance = 7.2;
+let cameraDistance = 7.2; aiming = false; $('#aim-button').classList.remove('active');
+let aiming = false;
 let verticalVelocity = 0;
 let onGround = true;
 const clock = new THREE.Clock();
@@ -560,6 +561,13 @@ fireButton.addEventListener('pointerup', stopFiring);
 fireButton.addEventListener('pointercancel', stopFiring);
 fireButton.addEventListener('lostpointercapture', stopFiring);
 window.addEventListener('blur', stopFiring);
+$('#aim-button').addEventListener('click', () => {
+  if (!started || paused || gameOver) return;
+  aiming = !aiming;
+  $('#aim-button').classList.toggle('active', aiming);
+  $('#crosshair').classList.toggle('aiming', aiming);
+  notify(aiming ? 'وضع التصويب الدقيق: الكاميرا أقرب والحركة أبطأ.' : 'تم إلغاء وضع التصويب.');
+});
 $('#jump-button').addEventListener('click', () => { if (started && !gameOver && onGround) { verticalVelocity = 6.2; onGround = false; } });
 const sprintButton = $('#sprint-button');
 sprintButton.addEventListener('pointerdown', (event) => { event.preventDefault(); mobileSprint = true; sprintButton.classList.add('active'); });
@@ -745,7 +753,10 @@ function animate(): void {
       enemy.rotation.y += Math.sin(time + index) * delta * 0.03;
     });
 
-    const cameraOffset = new THREE.Vector3(Math.sin(yaw) * cameraDistance, 3.6 + pitch * 2.2, Math.cos(yaw) * cameraDistance);
+    const desiredDistance = aiming ? 4.1 : cameraDistance;
+    camera.fov = THREE.MathUtils.lerp(camera.fov, aiming ? 54 : 76, 1 - Math.exp(-delta * 9));
+    camera.updateProjectionMatrix();
+    const cameraOffset = new THREE.Vector3(Math.sin(yaw) * desiredDistance, (aiming ? 2.65 : 3.6) + pitch * (aiming ? 1.5 : 2.2), Math.cos(yaw) * desiredDistance);
     const cameraTarget = player.position.clone().add(new THREE.Vector3(0, 1.35, 0));
     camera.position.lerp(cameraTarget.clone().add(cameraOffset), 1 - Math.pow(0.00008, delta));
     camera.lookAt(cameraTarget);

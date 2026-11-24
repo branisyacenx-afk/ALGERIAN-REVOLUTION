@@ -252,3 +252,9 @@ body:not(.game-started) #camera-zoom-controls{display:none}
 #reload-button.reloading{animation:reload-turn 1s linear infinite;background:#b47b2b !important}
 @keyframes reload-turn{to{transform:rotate(360deg)}}
 #jump-button,#sprint-button{width:46px !important;height:46px !important;border-radius:50% !important}
+
+/* Shoulder aim mode control */
+#aim-button{width:52px!important;height:52px!important;border-radius:50%!important;background:#263c31eF!important;border:2px solid #d8c18c!important;color:#fff!important;font-size:27px!important;touch-action:manipulation}
+#aim-button.active{background:#b17a2b!important;box-shadow:0 0 0 4px #e8c46a55,0 0 18px #e8c46a99!important}
+#crosshair.aiming{transform:translate(-50%,-50%) scale(.78)!important}
+#crosshair.aiming i{background:#ffe2a4}
