@@ -926,13 +926,22 @@ function launchMissionBriefing(): void {
   beginGame();
 }
 function closeMissionBriefing(): void {
-  $('#mission-cinematic').classList.remove('visible');
-  $('#mission-cinematic').setAttribute('aria-hidden','true');
+  // Keep this critical transition independent from the shared DOM helper.
+  const cinematic = document.getElementById('mission-cinematic');
+  if (cinematic) {
+    cinematic.classList.remove('visible');
+    cinematic.setAttribute('aria-hidden', 'true');
+  }
 }
 function beginGame(): void {
   launchDebugPhase = 'إغلاق المشهد التمهيدي';
-  $('#mission-cinematic').classList.remove('visible');
-  $('#mission-cinematic').setAttribute('aria-hidden','true');
+  // Use direct DOM access here: the launch path must not depend on a
+  // module-scoped helper while the early capture listener hands off control.
+  const cinematic = document.getElementById('mission-cinematic');
+  if (cinematic) {
+    cinematic.classList.remove('visible');
+    cinematic.setAttribute('aria-hidden', 'true');
+  }
 
   // Hand control to the live scene before doing any stage-specific work.
   // This prevents a stage setup exception from trapping the player in the menu.
@@ -960,9 +969,12 @@ function beginGame(): void {
   document.body.classList.add('game-started');
   $('#pause-screen').classList.remove('visible');
   $('#victory-screen').classList.remove('visible');
-  startScreen.hidden = true;
-  startScreen.setAttribute('aria-hidden','true');
-  startScreen.style.display = 'none';
+  const menuScreen = document.getElementById('start-screen');
+  if (menuScreen) {
+    menuScreen.hidden = true;
+    menuScreen.setAttribute('aria-hidden', 'true');
+    menuScreen.style.display = 'none';
+  }
 
   // Stage setup is isolated: if one optional stage element fails, the game
   // loop and player controls remain active and the actual error is reported.
