@@ -211,3 +211,35 @@ body:not(.game-started) #camera-zoom-controls{display:none}
 #game-root canvas{filter:saturate(1.08) contrast(1.04)}
 .mission{background:linear-gradient(135deg,#101a15eF,#26352bd9);border-color:#d5b87877;box-shadow:0 10px 32px #0005}
 #radar-panel{background:#101914df;box-shadow:0 8px 24px #0005}
+
+/* Shooter-style four-piece reticle: visible center, target feedback and hit confirmation. */
+#crosshair{
+  position:absolute !important;left:50% !important;top:50% !important;
+  width:38px !important;height:38px !important;display:block !important;
+  transform:translate(-50%,-50%) !important;pointer-events:none !important;
+  z-index:18 !important;color:#fff !important;
+  filter:drop-shadow(0 1px 2px #000) drop-shadow(0 0 3px #000);
+}
+#crosshair i{
+  position:absolute;display:block;background:#fff;border-radius:2px;
+  box-shadow:0 0 2px #111;transition:all .09s ease;
+}
+#crosshair .reticle-top,#crosshair .reticle-bottom{width:3px;height:9px;left:50%;transform:translateX(-50%)}
+#crosshair .reticle-top{top:0}
+#crosshair .reticle-bottom{bottom:0}
+#crosshair .reticle-left,#crosshair .reticle-right{height:3px;width:9px;top:50%;transform:translateY(-50%)}
+#crosshair .reticle-left{left:0}
+#crosshair .reticle-right{right:0}
+#crosshair .reticle-center{position:absolute;left:50%;top:50%;width:3px;height:3px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 0 2px #000}
+#crosshair .reticle-hit{display:none;position:absolute;inset:-10px;text-align:center;line-height:38px;font-size:29px;font-weight:900;color:#fff;text-shadow:0 1px 4px #000}
+#crosshair.targeting i{background:#ff4b3e}
+#crosshair.targeting .reticle-center{background:#ff4b3e;box-shadow:0 0 7px #ff392c}
+#crosshair.firing i{transform:scale(1.2)}
+#crosshair.hit .reticle-hit{display:block;color:#ffcf63}
+#crosshair.hit i{opacity:.25}
+#crosshair.targeting.hit .reticle-hit{color:#fff}
+@media(max-width:900px){
+ #crosshair{width:42px !important;height:42px !important}
+ #crosshair .reticle-top,#crosshair .reticle-bottom{height:10px;width:3px}
+ #crosshair .reticle-left,#crosshair .reticle-right{width:10px;height:3px}
+}

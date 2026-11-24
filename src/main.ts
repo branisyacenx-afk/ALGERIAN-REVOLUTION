@@ -467,6 +467,21 @@ $('#camera-zoom-in').addEventListener('click', () => { cameraDistance = Math.max
 $('#camera-zoom-out').addEventListener('click', () => { cameraDistance = Math.min(11, cameraDistance + 0.8); notify('تم إبعاد الكاميرا.'); });
 window.addEventListener('blur', () => keys.clear());
 
+function getAimedEnemy(): THREE.Group | undefined {
+  raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+  raycaster.far = 65;
+  let best: THREE.Group | undefined;
+  let bestDistance = Infinity;
+  for (const enemy of enemies) {
+    const bounds = new THREE.Box3().setFromObject(enemy).expandByScalar(0.5);
+    const point = new THREE.Vector3();
+    if (raycaster.ray.intersectBox(bounds, point)) {
+      const distance = camera.position.distanceTo(point);
+      if (distance < bestDistance) { best = enemy; bestDistance = distance; }
+    }
+  }
+  return best;
+}
 function shoot(): void {
   if (!started || gameOver || paused || missionDone || ammo <= 0) {
     if (ammo <= 0) notify('انتهت الذخيرة في هذا النموذج التجريبي.');
@@ -474,19 +489,8 @@ function shoot(): void {
   }
   ammo--;
   // Shoot through the screen reticle so camera aim and hit detection agree.
-  raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-  raycaster.far = 65;
-  // Aim-assist volumes make touch shooting usable on small screens.
-  let target: THREE.Group | undefined;
-  let targetDistance = Infinity;
-  for (const enemy of enemies) {
-    const bounds = new THREE.Box3().setFromObject(enemy).expandByScalar(0.42);
-    const point = new THREE.Vector3();
-    if (raycaster.ray.intersectBox(bounds, point)) {
-      const distance = camera.position.distanceTo(point);
-      if (distance < targetDistance && distance <= 65) { target = enemy; targetDistance = distance; }
-    }
-  }
+  // The same centered reticle drives aim feedback and hit detection.
+  const target = getAimedEnemy();
   const shotEnd = target
     ? target.position.clone().add(new THREE.Vector3(0, 1.1, 0))
     : raycaster.ray.origin.clone().addScaledVector(raycaster.ray.direction, 32);
@@ -718,6 +722,8 @@ function animate(): void {
     const cameraTarget = player.position.clone().add(new THREE.Vector3(0, 1.35, 0));
     camera.position.lerp(cameraTarget.clone().add(cameraOffset), 1 - Math.pow(0.00008, delta));
     camera.lookAt(cameraTarget);
+    const aimed = getAimedEnemy();
+    $('#crosshair').classList.toggle('targeting', Boolean(aimed));
   } else if (!started) {
     camera.position.set(Math.sin(time * 0.08) * 34, 19, 35);
     camera.lookAt(0, 1, -10);
