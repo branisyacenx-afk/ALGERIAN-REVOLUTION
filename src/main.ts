@@ -777,6 +777,8 @@ function showGameOver(): void {
   releaseJoystick(); releaseSprint(); stopFiring();
   document.body.classList.remove('game-started');
   $('#start-button').textContent = 'إعادة المحاولة';
+  startScreen.hidden = false;
+  startScreen.setAttribute('aria-hidden','false');
   startScreen.style.display = 'grid';
   notify('Vous êtes tombé au combat. Recommencez la mission.');
 }
@@ -857,31 +859,10 @@ function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
 }
 let cinematicTimer: number | null = null;
 function launchMissionBriefing(): void {
-  if (cinematicTimer !== null) window.clearTimeout(cinematicTimer);
-  const chapter = campaignChapter(campaignStage);
-  const sector = campaignSector(campaignStage);
-  const plan = campaignStage % 3 === 1
-    ? 'استرجع الإمدادات، ثم تعامل مع التهديدات قبل التقدم.'
-    : campaignStage % 3 === 2
-      ? 'تحرك بين نقاط الاحتماء وراقب محاور تقدم العدو.'
-      : 'احمِ فريقك، أمّن الطريق، ثم توجه إلى نقطة التجمع.';
-  // Start gameplay immediately on the user's tap. The cinematic is an overlay,
-  // never a gate that can leave the player stuck on the briefing screen.
+  // Reliability-first entry: start the playable scene directly. The briefing
+  // overlay is intentionally skipped until the start flow is verified stable.
+  closeMissionBriefing();
   beginGame();
-  $('#cinema-counter').textContent = `OPÉRATION ${String(campaignStage).padStart(2,'0')} / 100`;
-  $('#cinema-year').textContent = chapter.year;
-  $('#cinema-title').textContent = chapter.title;
-  $('#cinema-description').textContent = chapter.description;
-  $('#cinema-sector').textContent = sector.name;
-  $('#cinema-objective').textContent = campaignStageTitle(campaignStage);
-  $('#cinema-plan').textContent = plan;
-  $('#mission-cinematic').classList.add('visible');
-  $('#mission-cinematic').setAttribute('aria-hidden','false');
-  cinematicTimer = window.setTimeout(() => {
-    $('#mission-cinematic').classList.remove('visible');
-    $('#mission-cinematic').setAttribute('aria-hidden','true');
-    cinematicTimer = null;
-  }, 4200);
 }
 function closeMissionBriefing(): void {
   if (cinematicTimer !== null) window.clearTimeout(cinematicTimer);
@@ -906,6 +887,8 @@ function beginGame(): void {
   // Do not request fullscreen or lock the device orientation; preserve portrait touch layout.
   $('#pause-screen').classList.remove('visible');
   $('#victory-screen').classList.remove('visible');
+  startScreen.hidden = true;
+  startScreen.setAttribute('aria-hidden','true');
   startScreen.style.display = 'none';
   if (window.matchMedia('(pointer:fine)').matches) renderer.domElement.requestPointerLock();
   notify('Suivez le marqueur de mission. Utilisez COUVERT près des buissons ou des fortifications.');
@@ -921,7 +904,7 @@ $('#start-button').addEventListener('click', () => {
     try { beginGame(); } catch (fallbackError) { console.error('Direct game start failed:', fallbackError); notify('تعذر بدء المهمة. أعد تحميل الصفحة وحاول مجدداً.'); }
   }
 });
-$('#cinematic-enter').addEventListener('click', closeMissionBriefing);
+$('#cinematic-enter').addEventListener('click', () => { closeMissionBriefing(); beginGame(); });
 
 function refreshMainMenu(): void {
   const chapter = campaignChapter(campaignStage);
