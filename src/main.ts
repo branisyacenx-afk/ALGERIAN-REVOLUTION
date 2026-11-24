@@ -30,36 +30,12 @@ window.addEventListener('unhandledrejection', (event) => {
   console.error('Game startup promise rejected:', event.reason);
   if (!gameBootComplete) showStartupFailure('حدث خطأ أثناء تحميل اللعبة. أعد المحاولة وأرسل صورة إذا تكرر.');
 });
-document.addEventListener('click', (event) => {
-  const target = event.target;
-  if (!(target instanceof Element)) return;
-  const button = target.closest<HTMLButtonElement>('#start-button, #missions-start');
-  if (!button || button.disabled) return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  button.dataset.originalLabel ||= button.innerHTML;
-  button.style.opacity = '0.85';
-  const label = button.querySelector('b') || button;
-  if (label instanceof HTMLElement) label.textContent = 'جارٍ دخول ساحة المعركة…';
-  if (launchAttemptTimer !== null) window.clearTimeout(launchAttemptTimer);
-  window.setTimeout(() => {
-    try {
-      beginGame();
-    } catch (error) {
-      console.error('Early mission launch failed:', error);
-      const detail = error instanceof Error ? error.message : String(error);
-      const stack = error instanceof Error ? error.stack || '' : '';
-      showStartupFailure('تعذر تشغيل المعركة عند: ' + launchDebugPhase + ' — ' + detail + (stack ? '\\n' + stack.slice(0,700) : ''));
-    }
-  }, 0);
-}, true);
-
 const root = document.querySelector<HTMLDivElement>('#game-root');
 if (!root) throw new Error('Game root not found');
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9ba99a);
-scene.fog = new THREE.Fog(0x9ba99a, 520, 1900);
+scene.fog = new THREE.FogExp2(0x8f8a70, 0.00115);
 // Some Android in-app browsers report pointer/orientation media features unreliably.
 // Keep the game in the phone's natural portrait orientation. No CSS rotation or swapped viewport axes.
 const isPortraitTouch = () => false;
@@ -688,6 +664,28 @@ supplyCache.position.set(-3, 0, -8);
 scene.add(supplyCache);
 
 const keys = new Set<string>();
+let soundEnabled = localStorage.getItem('algerian-revolution-sound') !== 'off';
+let audioContext: AudioContext | null = null;
+function playSfx(kind: 'shot'|'reload'|'hit'|'pickup'|'damage'): void {
+  if (!soundEnabled) return;
+  try {
+    const AudioCtor = window.AudioContext || (window as typeof window & {webkitAudioContext?: typeof AudioContext}).webkitAudioContext;
+    if (!AudioCtor) return;
+    audioContext ||= new AudioCtor();
+    if (audioContext.state === 'suspended') void audioContext.resume();
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    const now = audioContext.currentTime;
+    const presets = {shot:[105,0.065,0.045,'sawtooth'],reload:[520,0.12,0.025,'triangle'],hit:[190,0.09,0.035,'square'],pickup:[740,0.18,0.035,'sine'],damage:[72,0.22,0.055,'sawtooth']} as const;
+    const [frequency,duration,volume,wave] = presets[kind];
+    osc.type = wave; osc.frequency.setValueAtTime(frequency,now);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(35,frequency*0.58),now+duration);
+    gain.gain.setValueAtTime(volume,now); gain.gain.exponentialRampToValueAtTime(0.001,now+duration);
+    osc.connect(gain); gain.connect(audioContext.destination); osc.start(now); osc.stop(now+duration);
+  } catch (error) { console.warn('Audio effect unavailable:',error); }
+}
+const muzzleFlash = new THREE.PointLight(0xffb85c,0,5,2);
+scene.add(muzzleFlash);
 let started = false;
 let paused = false;
 let health = 100;
@@ -698,7 +696,7 @@ let reserveAmmo = 48;
 let reloading = false;
 let fireHoldTimer: number | null = null;
 let missionDone = false;
-let campaignStage = Math.max(1, Math.min(100, Number(localStorage.getItem('algerian-revolution-stage') || 1)));
+let campaignStage = Math.max(1, Math.min(5, Number(localStorage.getItem('algerian-revolution-stage') || 1)));
 const campaignSectors = [
   { name:'جبال الأوراس', x:0, z:-25 },
   { name:'ممرات القبائل', x:170, z:-120 },
@@ -806,7 +804,7 @@ function notify(message: string): void {
     'Vous êtes tombé au combat. Recommencez la mission.':'لقد سقطت في المعركة. أعد المحاولة.',
     'Suivez le marqueur de mission. Utilisez COUVERT près des buissons ou des fortifications.':'اتبع مؤشر المهمة واستخدم زر الاحتماء قرب الصخور والأشجار.',
     'Rechargement en cours…':'جارٍ إعادة التلقيم…','Rechargement terminé.':'اكتمل التلقيم.',
-    'Plus de munitions. Rechargez votre arme.':'نفدت الذخيرة. أعد التلقيم.',
+    'نفدت الذخيرة. أعد تلقيم سلاحك.':'نفدت الذخيرة. أعد التلقيم.',
     'Cible touchée ! Tirez encore pour la neutraliser.':'أصبت الهدف! أطلق مرة أخرى لإسقاطه.',
     'Ennemi neutralisé — cible éliminée.':'تم إسقاط العدو!',
     'Visée précise activée.':'تم تفعيل التصويب.','Visée désactivée.':'تم إيقاف التصويب.',
@@ -841,6 +839,12 @@ function updateHud(): void {
   $('#ammo-value').textContent = `${ammo} / ${reserveAmmo}`;
   const progress = missionDone ? 100 : !suppliesCollected ? 0 : enemies.length > 0 ? 45 : 75;
   $('#mission-progress').style.width = `${progress}%`;
+  const suppliesNode = document.getElementById('objective-supplies');
+  const enemiesNode = document.getElementById('objective-enemies');
+  const rallyNode = document.getElementById('objective-rally');
+  if (suppliesNode) suppliesNode.textContent = `الإمدادات: ${suppliesCollected ? '1/1' : '0/1'}`;
+  if (enemiesNode) enemiesNode.textContent = `الأعداء المتبقون: ${enemies.length}`;
+  if (rallyNode) rallyNode.textContent = `نقطة التجمع: ${suppliesCollected && enemies.length === 0 ? 'متاحة الآن' : 'مغلقة حتى إتمام الأهداف'}`;
   $('#mission-status').textContent = missionDone
     ? 'اكتملت المهمة — وصلت إلى نقطة التجمع!'
     : !suppliesCollected
@@ -868,7 +872,7 @@ function configureCampaignStage(): void {
   const chapter=campaignChapter(campaignStage);
   launchDebugPhase = 'تغيير السماء والإضاءة';
   scene.background = new THREE.Color(chapter.sky);
-  scene.fog = new THREE.Fog(chapter.fog, chapter.kind==='desert'?420:300, chapter.kind==='city'?1250:1600);
+  scene.fog = new THREE.FogExp2(chapter.fog, chapter.kind==='desert'?0.00072:chapter.kind==='city'?0.0009:0.00115);
   launchDebugPhase = 'تغيير الأرضية';
   (terrain.material as THREE.MeshStandardMaterial).color.setHex(chapter.terrain);
   sun.intensity = chapter.kind==='desert'?2.65:chapter.kind==='city'?1.75:2.2;
@@ -888,7 +892,7 @@ function configureCampaignStage(): void {
   missionDone = false; suppliesCollected = false;
   goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false;
   launchDebugPhase = 'تحديد عدد الجنود';
-  const count = Math.min(24, 8 + Math.floor((campaignStage-1)/4));
+  const count = Math.min(12, 6 + Math.floor((campaignStage-1)/2));
   launchDebugPhase = 'إنشاء قوات العدو';
   resetEnemies(count, base);
   launchDebugPhase = 'تحديث بيانات المهمة';
@@ -909,6 +913,10 @@ function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
     if (soldierTemplate) attachSoldierModel(enemy, 0x858b7b);
     enemy.position.set(base.x + (i - (count - 1) / 2) * 4.4, 0, base.z - 15 - (i % 3) * 5);
     enemy.userData.health = 2;
+    const bar = new THREE.Group();
+    const barBack = new THREE.Mesh(new THREE.PlaneGeometry(0.9,0.09),new THREE.MeshBasicMaterial({color:0x241c18,side:THREE.DoubleSide}));
+    const barFill = new THREE.Mesh(new THREE.PlaneGeometry(0.84,0.055),new THREE.MeshBasicMaterial({color:0x8fc36b,side:THREE.DoubleSide}));
+    barFill.position.z = 0.01; bar.add(barBack,barFill); bar.position.set(0,2.35,0); enemy.add(bar); enemy.userData.healthBar = bar; enemy.userData.healthFill = barFill;
     enemy.userData.fireCooldown = 1.0 + i * 0.18;
     enemy.userData.role = i % 6 === 0 ? 'sniper' : 'rifle';
     enemy.userData.patrolX = enemy.position.x;
@@ -934,17 +942,26 @@ function closeMissionBriefing(): void {
   }
 }
 function beginGame(): void {
-  launchDebugPhase = 'إغلاق المشهد التمهيدي';
-  // Use direct DOM access here: the launch path must not depend on a
-  // module-scoped helper while the early capture listener hands off control.
+  // Start the live scene first; optional effects and setup must never gate entry.
   const cinematic = document.getElementById('mission-cinematic');
-  if (cinematic) {
-    cinematic.classList.remove('visible');
-    cinematic.setAttribute('aria-hidden', 'true');
+  cinematic?.classList.remove('visible');
+  cinematic?.setAttribute('aria-hidden', 'true');
+  const menuScreen = document.getElementById('start-screen');
+  if (menuScreen) {
+    menuScreen.hidden = true;
+    menuScreen.setAttribute('aria-hidden', 'true');
+    menuScreen.style.display = 'none';
+    menuScreen.style.pointerEvents = 'none';
   }
+  document.getElementById('pause-screen')?.classList.remove('visible');
+  document.getElementById('victory-screen')?.classList.remove('visible');
+  document.body.classList.remove('portrait-landscape-sim','needs-landscape');
+  document.body.classList.add('game-started');
+  started = true;
+  paused = false;
+  gameBootComplete = true;
+  // animate() is already running; started=true switches it to the gameplay branch.
 
-  // Hand control to the live scene before doing any stage-specific work.
-  // This prevents a stage setup exception from trapping the player in the menu.
   launchDebugPhase = 'إعادة ضبط الصحة';
   health = 100;
   launchDebugPhase = 'إعادة ضبط التحمل';
@@ -968,14 +985,11 @@ function beginGame(): void {
   launchDebugPhase = 'إعادة ضبط نموذج اللاعب';
   player.scale.set(1,1,1);
   launchDebugPhase = 'تهيئة زر الاحتماء';
-  $('#hide-button').classList.remove('active');
-  $('#hide-button').innerHTML = '<span>▣</span><small>احتماء</small>';
+  document.getElementById('hide-button')?.classList.remove('active');
+  const hideButton = document.getElementById('hide-button');
+  if (hideButton) hideButton.innerHTML = '<span>▣</span><small>احتماء</small>';
   yaw = 0; pitch = -0.10; cameraDistance = 8.4; verticalVelocity = 0; onGround = true;
   launchDebugPhase = 'تفعيل وضع اللعب';
-  document.body.classList.remove('portrait-landscape-sim','needs-landscape');
-  started = true;
-  paused = false;
-  gameBootComplete = true;
   if (launchAttemptTimer !== null) window.clearTimeout(launchAttemptTimer);
   launchAttemptTimer = null;
   document.querySelectorAll<HTMLButtonElement>('#start-button,#missions-start').forEach((button) => {
@@ -983,16 +997,6 @@ function beginGame(): void {
     button.disabled = false;
   });
   document.querySelector('#startup-error')?.remove();
-  document.body.classList.add('game-started');
-  $('#pause-screen').classList.remove('visible');
-  $('#victory-screen').classList.remove('visible');
-  const menuScreen = document.getElementById('start-screen');
-  if (menuScreen) {
-    menuScreen.hidden = true;
-    menuScreen.setAttribute('aria-hidden', 'true');
-    menuScreen.style.display = 'none';
-  }
-
   // Stage setup is isolated: if one optional stage element fails, the game
   // loop and player controls remain active and the actual error is reported.
   try {
@@ -1004,9 +1008,9 @@ function beginGame(): void {
     notify('بدأت المعركة، لكن تعذر إعداد بعض عناصر المرحلة: ' + detail);
   }
   launchDebugPhase = 'تهيئة الكاميرا';
-  if (window.matchMedia('(pointer:fine)').matches) {
-    try { renderer.domElement.requestPointerLock(); }
-    catch (error) { console.warn('Pointer lock unavailable:', error); }
+  if (!window.matchMedia('(pointer: coarse)').matches && typeof renderer.domElement.requestPointerLock === 'function') {
+    try { const result = renderer.domElement.requestPointerLock(); if (result && typeof (result as Promise<void>).catch === 'function') (result as Promise<void>).catch(() => {}); }
+    catch (error) { console.warn('Pointer lock unavailable; continuing:', error); }
   }
   launchDebugPhase = 'إظهار تعليمات المهمة';
   notify('اتبع مؤشر المهمة واستخدم زر الاحتماء قرب الصخور والأشجار.');
@@ -1080,6 +1084,8 @@ $('#graphics-quality').addEventListener('change', (event) => {
     sun.castShadow = enabled;
   }
 });
+const soundToggle = document.getElementById('sound-toggle') as HTMLInputElement | null;
+if (soundToggle) { soundToggle.checked = soundEnabled; soundToggle.addEventListener('change', () => { soundEnabled = soundToggle.checked; localStorage.setItem('algerian-revolution-sound', soundEnabled ? 'on' : 'off'); if (soundEnabled) playSfx('pickup'); }); }
 $('#shadows-toggle').addEventListener('change', (event) => {
   const enabled = (event.currentTarget as HTMLInputElement).checked;
   renderer.shadowMap.enabled = enabled;
@@ -1107,12 +1113,12 @@ function resumeGame(): void {
   if (!paused) return;
   paused = false;
   $('#pause-screen').classList.remove('visible');
-  if (window.matchMedia('(pointer:fine)').matches) renderer.domElement.requestPointerLock();
+  if (!window.matchMedia('(pointer: coarse)').matches) { try { const result = renderer.domElement.requestPointerLock(); if (result && typeof (result as Promise<void>).catch === 'function') (result as Promise<void>).catch(() => {}); } catch (error) { console.warn('Pointer lock unavailable:', error); } }
 }
 $('#pause-button').addEventListener('click', pauseGame);
 $('#resume-button').addEventListener('click', resumeGame);
 $('#victory-next').addEventListener('click', () => {
-  if (campaignStage >= 100) return;
+  if (campaignStage >= 5) { notify('انتهت العمليات المتاحة في الفصل الأول. بقية الفصول قيد التطوير.'); return; }
   campaignStage += 1;
   localStorage.setItem('algerian-revolution-stage', String(campaignStage));
   $('#victory-screen').classList.remove('visible');
@@ -1185,14 +1191,15 @@ document.addEventListener('keyup', (event) => keys.delete(event.code));
 function reloadWeapon(): void {
   if (!started || gameOver || paused || reloading || ammo === 12 || reserveAmmo <= 0) return;
   reloading = true;
+  playSfx('reload');
   $('#reload-button').classList.add('reloading');
-  notify('Rechargement en cours…');
+  notify('جارٍ إعادة التلقيم…');
   window.setTimeout(() => {
     if (!started || gameOver) { reloading = false; $('#reload-button').classList.remove('reloading'); return; }
     const loaded = Math.min(12 - ammo, reserveAmmo);
     ammo += loaded; reserveAmmo -= loaded; reloading = false;
     $('#reload-button').classList.remove('reloading');
-    updateHud(); notify('Rechargement terminé.');
+    updateHud(); notify('اكتمل التلقيم.');
   }, 1050);
 }
 function interact(): void {
@@ -1202,6 +1209,7 @@ function interact(): void {
     return;
   }
   suppliesCollected = true;
+  playSfx('pickup');
   supplyCache.visible = false;
   reserveAmmo += 12;
   updateHud();
@@ -1218,12 +1226,12 @@ $('#camera-zoom-in').addEventListener('click', () => { cameraDistance = Math.max
 $('#camera-zoom-out').addEventListener('click', () => { cameraDistance = Math.min(14, cameraDistance + 0.8); notify('Caméra éloignée.'); });
 $('#camera-mode-toggle').addEventListener('click', () => {
   cameraMode = cameraMode === 'behind' ? 'front' : 'behind';
-  $('#camera-mode-toggle').textContent = cameraMode === 'behind' ? 'ARRIÈRE' : 'AVANT';
+  $('#camera-mode-toggle').textContent = cameraMode === 'behind' ? 'خلف' : 'أمام';
   notify(cameraMode === 'behind' ? 'Vue arrière : vous regardez devant le soldat.' : 'Vue avant : la caméra montre le visage du soldat.');
 });
 $('#camera-reset').addEventListener('click', () => {
   cameraMode = 'behind'; cameraDistance = 8.4; yaw = 0; pitch = -0.10;
-  $('#camera-mode-toggle').textContent = 'ARRIÈRE';
+  $('#camera-mode-toggle').textContent = 'خلف';
   notify('Caméra réinitialisée derrière le soldat.');
 });
 window.addEventListener('blur', () => keys.clear());
@@ -1255,6 +1263,11 @@ function shoot(): void {
     return;
   }
   ammo--;
+  playSfx('shot');
+  camera.updateMatrixWorld();
+  muzzleFlash.position.copy(camera.position).addScaledVector(camera.getWorldDirection(new THREE.Vector3()),1.15);
+  muzzleFlash.intensity = 3.2;
+  window.setTimeout(() => { muzzleFlash.intensity = 0; },65);
   if (playerHidden) { crouching = false; playerHidden = false; player.scale.y = 1; $('#hide-button').classList.remove('active'); $('#hide-button').innerHTML = '<span>▣</span><small>COUVERT</small>'; notify('Votre tir a révélé votre position. Changez de couverture.'); }
   // Shoot through the screen reticle so camera aim and hit detection agree.
   // The same centered reticle drives aim feedback and hit detection.
@@ -1269,7 +1282,10 @@ function shoot(): void {
   $('#crosshair').classList.add('firing');
   window.setTimeout(() => $('#crosshair').classList.remove('firing'), 110);
   if (target) {
+      playSfx('hit');
       target.userData.health = Math.max(0, (target.userData.health as number) - 1);
+      const healthFill = target.userData.healthFill as THREE.Mesh | undefined;
+      if (healthFill) healthFill.scale.x = Math.max(0.02,(target.userData.health as number)/2);
       if (target.userData.health > 0) {
         target.traverse((part) => {
           if (!(part instanceof THREE.Mesh)) return;
@@ -1737,6 +1753,7 @@ function animate(): void {
         enemy.userData.fireCooldown = enemy.userData.role === 'sniper' ? 4.2 + Math.random() * 1.5 : 2.1 + Math.random() * 1.1;
         if (damageCooldown <= 0 && Math.random() > 0.35) {
           health = Math.max(0, health - 5);
+          playSfx('damage');
           damageCooldown = 0.7;
           $('#damage-flash').classList.add('active');
           window.setTimeout(() => $('#damage-flash').classList.remove('active'), 130);
@@ -1746,6 +1763,7 @@ function animate(): void {
       }
       if (!playerHidden && distance < 3.2 && damageCooldown <= 0) {
         health = Math.max(0, health - 8);
+        playSfx('damage');
         damageCooldown = 0.9;
         $('#damage-flash').classList.add('active');
         window.setTimeout(() => $('#damage-flash').classList.remove('active'), 180);
