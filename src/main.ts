@@ -269,6 +269,8 @@ let stamina = 100;
 let mobileSprint = false;
 let ammo = 12;
 let reserveAmmo = 48;
+let reloading = false;
+let fireHoldTimer: number | null = null;
 let missionDone = false;
 let suppliesCollected = false;
 let goalNeedsSuppliesNotified = false;
@@ -440,9 +442,17 @@ document.addEventListener('keydown', (event) => {
 });
 document.addEventListener('keyup', (event) => keys.delete(event.code));
 function reloadWeapon(): void {
-  if (!started || ammo === 12 || reserveAmmo <= 0) return;
-  const loaded = Math.min(12 - ammo, reserveAmmo);
-  ammo += loaded; reserveAmmo -= loaded; updateHud(); notify('تم تلقيم السلاح.');
+  if (!started || gameOver || paused || reloading || ammo === 12 || reserveAmmo <= 0) return;
+  reloading = true;
+  $('#reload-button').classList.add('reloading');
+  notify('جارٍ تلقيم السلاح…');
+  window.setTimeout(() => {
+    if (!started || gameOver) { reloading = false; $('#reload-button').classList.remove('reloading'); return; }
+    const loaded = Math.min(12 - ammo, reserveAmmo);
+    ammo += loaded; reserveAmmo -= loaded; reloading = false;
+    $('#reload-button').classList.remove('reloading');
+    updateHud(); notify('اكتمل تلقيم السلاح.');
+  }, 1050);
 }
 function interact(): void {
   if (!started || gameOver || suppliesCollected) return;
@@ -483,7 +493,7 @@ function getAimedEnemy(): THREE.Group | undefined {
   return best;
 }
 function shoot(): void {
-  if (!started || gameOver || paused || missionDone || ammo <= 0) {
+  if (!started || gameOver || paused || missionDone || reloading || ammo <= 0) {
     if (ammo <= 0) notify('انتهت الذخيرة في هذا النموذج التجريبي.');
     return;
   }
@@ -532,7 +542,24 @@ function shoot(): void {
   updateHud();
 }
 document.addEventListener('mousedown', (event) => { if (event.button === 0 && window.matchMedia('(pointer:fine)').matches) shoot(); });
-$('#fire-button').addEventListener('pointerdown', (event) => { event.preventDefault(); shoot(); });
+const fireButton = $('#fire-button');
+const stopFiring = () => {
+  if (fireHoldTimer !== null) { window.clearInterval(fireHoldTimer); fireHoldTimer = null; }
+  fireButton.classList.remove('active');
+};
+fireButton.addEventListener('pointerdown', (event) => {
+  event.preventDefault();
+  if (!started || paused || gameOver) return;
+  stopFiring();
+  fireButton.setPointerCapture(event.pointerId);
+  fireButton.classList.add('active');
+  shoot();
+  fireHoldTimer = window.setInterval(() => shoot(), 165);
+});
+fireButton.addEventListener('pointerup', stopFiring);
+fireButton.addEventListener('pointercancel', stopFiring);
+fireButton.addEventListener('lostpointercapture', stopFiring);
+window.addEventListener('blur', stopFiring);
 $('#jump-button').addEventListener('click', () => { if (started && !gameOver && onGround) { verticalVelocity = 6.2; onGround = false; } });
 const sprintButton = $('#sprint-button');
 sprintButton.addEventListener('pointerdown', (event) => { event.preventDefault(); mobileSprint = true; sprintButton.classList.add('active'); });
