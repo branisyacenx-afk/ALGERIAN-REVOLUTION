@@ -415,7 +415,7 @@ kitMesh(new THREE.BoxGeometry(0.08,0.16,0.08),0xc0a15e,new THREE.Vector3(0,1.83,
 // A visible Algerian flag patch is fixed to the upper back of the field pack.
 const backFlag = new THREE.Mesh(new THREE.PlaneGeometry(0.34,0.22), new THREE.MeshStandardMaterial({map:flagTexture,side:THREE.DoubleSide,roughness:0.9}));
 backFlag.position.set(0,1.38,0.405); backFlag.castShadow=true; algerianKit.add(backFlag);
-uniformLayer.userData.keepOnCharacter = true;
+uniformLayer.userData.keepVisibleOnCharacter = true;
 uniformLayer.add(algerianKit,frenchKit); player.add(uniformLayer);
 algerianKit.visible=true; frenchKit.visible=false;
 
@@ -647,6 +647,14 @@ const campaignSectors = [
 ];
 const campaignOperations = ['تأمين الممر','تحرير القرية','تدمير مركز القيادة','إنقاذ المجموعة','استعادة الإمدادات','اقتحام الحصن','حماية نقطة التجمع','قطع طريق الإمداد','تطهير الغابة','السيطرة على المرتفع'];
 const campaignStageTitle = (stage:number) => campaignOperations[(stage-1)%10];
+for (const [index, sector] of campaignSectors.entries()) {
+  addStoneOutpost(sector.x + 22, sector.z - 30, index * 0.17);
+  addSandbagLine(sector.x - 13, sector.z - 24, 7 + (index % 3), -0.12);
+  addConcealmentBush(sector.x - 9, sector.z - 11);
+  addConcealmentBush(sector.x + 12, sector.z - 48);
+  coverZones.push({position:new THREE.Vector3(sector.x + 22,0,sector.z - 30),radius:9});
+  coverZones.push({position:new THREE.Vector3(sector.x - 13,0,sector.z - 24),radius:7});
+}
 const campaignSector = (stage:number) => campaignSectors[Math.floor((stage-1)/10)];
 
 let suppliesCollected = false;
