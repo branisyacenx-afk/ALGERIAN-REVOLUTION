@@ -551,6 +551,15 @@ function notify(message: string): void {
   window.clearTimeout(toastTimer);
   toastTimer = window.setTimeout(() => toast.classList.remove('show'), 2400);
 }
+function showGameOver(): void {
+  if (gameOver) return;
+  gameOver = true; started = false; paused = false;
+  releaseJoystick(); releaseSprint(); stopFiring();
+  document.body.classList.remove('game-started');
+  $('#start-button').textContent = 'RÉESSAYER';
+  startScreen.style.display = 'grid';
+  notify('Vous êtes tombé au combat. Recommencez la mission.');
+}
 function updateHud(): void {
   $('#health-value').textContent = `${health}%`;
   $('#health-meter').style.width = `${health}%`;
@@ -595,7 +604,7 @@ function beginGame(): void {
     health = 100; stamina = 100; damageCooldown = 0; ammo = 12; reserveAmmo = 48; missionDone = false; suppliesCollected = false; goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false; gameOver = false;
     supplyCache.visible = true;
     player.position.set(0, 0, 9); player.rotation.set(0, 0, 0); player.scale.set(1,1,1); crouching = false; playerHidden = false; $('#hide-button').classList.remove('active'); $('#hide-button').innerHTML = '<span>▣</span><small>COUVERT</small>';
-    yaw = 0; pitch = -0.10; cameraDistance = 7.2;
+    yaw = 0; pitch = -0.10; cameraDistance = 5.8;
     verticalVelocity = 0; onGround = true; resetEnemies(); updateHud();
 document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
   }
@@ -755,17 +764,23 @@ $('#camera-reset').addEventListener('click', () => {
 window.addEventListener('blur', () => keys.clear());
 
 function getAimedEnemy(): THREE.Group | undefined {
-  // Raycast the visible meshes themselves: no oversized invisible hit boxes.
-  raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-  raycaster.near = 0.1;
-  raycaster.far = 90;
+  // Aim assist makes touch shooting usable on small screens while keeping a visible target requirement.
+  camera.updateMatrixWorld();
+  const origin = camera.position.clone();
+  const view = camera.getWorldDirection(new THREE.Vector3()).normalize();
   let best: THREE.Group | undefined;
-  let bestDistance = Infinity;
+  let bestScore = -Infinity;
   for (const enemy of enemies) {
-    const meshes: THREE.Object3D[] = [];
-    enemy.traverse((part) => { if (part instanceof THREE.Mesh) meshes.push(part); });
-    const hit = raycaster.intersectObjects(meshes, false)[0];
-    if (hit && hit.distance < bestDistance) { best = enemy; bestDistance = hit.distance; }
+    if (!enemy.parent || enemy.userData.dead) continue;
+    const targetPoint = enemy.position.clone().add(new THREE.Vector3(0, 1.15, 0));
+    const toTarget = targetPoint.sub(origin);
+    const distance = toTarget.length();
+    if (distance > 62 || distance < 0.1) continue;
+    const alignment = view.dot(toTarget.normalize());
+    // A forgiving 18-degree cone replaces the brittle exact-pixel-only hit test.
+    if (alignment < 0.95) continue;
+    const score = alignment - distance * 0.00045;
+    if (score > bestScore) { best = enemy; bestScore = score; }
   }
   return best;
 }
@@ -803,7 +818,9 @@ function shoot(): void {
         window.setTimeout(() => $('#crosshair').classList.remove('hit'), 180);
         notify('Cible touchée ! Tirez encore pour la neutraliser.');
       } else {
-        scene.remove(target);
+        target.userData.dead = true;
+        const mixer = target.userData.characterMixer as THREE.AnimationMixer | undefined;
+        mixer?.stopAllAction();
         const index = enemies.indexOf(target);
         if (index >= 0) enemies.splice(index, 1);
         const removedMeshes: THREE.Object3D[] = [];
@@ -812,9 +829,21 @@ function shoot(): void {
           const meshIndex = enemyMeshes.indexOf(part);
           if (meshIndex >= 0) enemyMeshes.splice(meshIndex, 1);
         }
+        // A visible fall/death pose remains in the world briefly instead of vanishing instantly.
+        target.position.y = 0.04;
+        target.rotation.z = target.position.x < player.position.x ? -1.18 : 1.18;
+        target.rotation.x = -0.18;
+        target.traverse((part) => {
+          if (part instanceof THREE.Mesh) {
+            part.castShadow = true;
+            const mats = Array.isArray(part.material) ? part.material : [part.material];
+            mats.forEach((mat) => { const m = mat as THREE.MeshStandardMaterial; if (m.color) m.color.lerp(new THREE.Color(0x282820), 0.18); });
+          }
+        });
+        window.setTimeout(() => { scene.remove(target); target.clear(); }, 1100);
         $('#crosshair').classList.add('hit');
         window.setTimeout(() => $('#crosshair').classList.remove('hit'), 220);
-        notify('Ennemi neutralisé.');
+        notify('Ennemi neutralisé — cible éliminée.');
       }
   }
   updateHud();
@@ -1041,6 +1070,7 @@ function animate(): void {
           $('#damage-flash').classList.add('active');
           window.setTimeout(() => $('#damage-flash').classList.remove('active'), 130);
           updateHud();
+          if (health <= 0) showGameOver();
         }
       }
       if (!playerHidden && distance < 3.2 && damageCooldown <= 0) {
@@ -1049,13 +1079,7 @@ function animate(): void {
         $('#damage-flash').classList.add('active');
         window.setTimeout(() => $('#damage-flash').classList.remove('active'), 180);
         updateHud();
-        if (health === 0) {
-          gameOver = true; started = false;
-          $('#start-button').textContent = 'RÉESSAYER';
-          document.body.classList.remove('game-started');
-          startScreen.style.display = 'grid';
-          notify('Mission échouée. Vous pouvez réessayer.');
-        }
+        if (health <= 0) showGameOver();
       }
       enemy.position.y = 0;
       enemy.rotation.y += Math.sin(time + index) * delta * 0.03;
@@ -1065,11 +1089,11 @@ function animate(): void {
     const desiredDistance = aiming ? Math.min(cameraDistance, 4.8) : cameraDistance;
     camera.fov = THREE.MathUtils.lerp(camera.fov, aiming ? 58 : 76, 1 - Math.exp(-delta * 9));
     camera.updateProjectionMatrix();
-    const shoulder = aiming ? 1.05 : 0.68;
+    const shoulder = aiming ? 0.72 : 0.38;
     const viewSide = cameraMode === 'front' ? -1 : 1;
     const cameraOffset = new THREE.Vector3(
       Math.sin(yaw) * desiredDistance * viewSide + Math.cos(yaw) * shoulder,
-      (aiming ? 2.15 : 2.85) + pitch * (aiming ? 1.35 : 2.0),
+      (aiming ? 1.85 : 2.35) + pitch * (aiming ? 1.1 : 1.5),
       Math.cos(yaw) * desiredDistance * viewSide - Math.sin(yaw) * shoulder
     );
     const cameraTarget = player.position.clone().add(new THREE.Vector3(0, crouching ? 0.92 : aiming ? 1.52 : 1.34, 0));
