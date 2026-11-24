@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#101914" />
+    <meta name="description" content="ALGERIAN REVOLUTION — expérience 3D d'action inspirée de l'histoire algérienne." />
+    <title>ثورة الجزائر | المهمة الأولى</title>
+  </head>
+  <body>
+    <div id="app">
+      <div id="game-root" aria-label="Champ de bataille 3D"></div>
+      <section id="hud" aria-live="polite">
+        <header class="topbar">
+          <div class="brand"><span class="brand-mark">✦</span><div><strong>ثورة الجزائر</strong><small>المهمة الأولى · ساحة المعركة</small></div></div>
+          <div class="chapter"><span>الفصل الأول</span><strong>تأمين المنطقة</strong><button id="pause-button" type="button">Ⅱ إيقاف</button></div>
+        </header>
+        <div id="radar-panel"><div class="radar-title">الخريطة</div><canvas id="radar" width="180" height="180" aria-label="Mini-carte tactique"></canvas><div class="radar-legend"><span>● أنت</span><span>● عدو</span><span>● صندوق</span><span>● تجمع</span></div></div>
+        <div class="mission"><span class="eyebrow" id="stage-label">المرحلة 1 / 100</span><strong id="mission-title">تأمين الممر</strong><p>استرجع صندوق الإمدادات، أسقط الأعداء، ثم توجه إلى نقطة التجمع.</p><div class="progress"><i id="mission-progress"></i></div><small id="mission-status">Objectif : rejoindre la zone</small></div>
+        <div class="bottom-hud">
+          <div class="health"><span>الصحة</span><strong id="health-value">100%</strong><div class="meter"><i id="health-meter"></i></div></div>
+          <div class="ammo"><span>الذخيرة</span><strong id="ammo-value">12 / 48</strong></div>
+          <div class="stamina"><span>التحمل</span><strong id="stamina-value">100%</strong><div class="meter"><i id="stamina-meter"></i></div></div>
+          <div class="hint" id="desktop-hint">ZQSD / WASD : bouger · Maj : courir · Espace : sauter · E : récupérer · R : recharger · Souris : regarder / tirer</div>
+        </div>
+        <div id="crosshair" aria-label="Viseur"><i class="reticle-top"></i><i class="reticle-right"></i><i class="reticle-bottom"></i><i class="reticle-left"></i><b class="reticle-center"></b><span class="reticle-hit">×</span></div>
+        <button id="pickup-button" type="button" disabled>استرجاع الصندوق</button>
+        <div id="camera-zoom-controls">
+          <button id="camera-mode-toggle" type="button" aria-label="Changer le point de vue">خلف</button>
+          <button id="camera-zoom-in" type="button" aria-label="Rapprocher la caméra">＋</button>
+          <button id="camera-zoom-out" type="button" aria-label="Éloigner la caméra">－</button>
+          <button id="camera-reset" type="button" aria-label="Réinitialiser la caméra">↺</button>
+        </div>
+        <div id="look-area" aria-label="منطقة تحريك الكاميرا"></div>
+        <div id="interact-hint">APPUYEZ POUR RÉCUPÉRER</div>
+        <div id="victory-screen" aria-hidden="true"><div class="pause-card victory-card"><span class="eyebrow">حملة التحرير · 100 مرحلة</span><h2 id="victory-heading">اكتملت المرحلة 1 من 100</h2><p>تم تأمين القطاع. استعد للعملية التالية.</p><div class="victory-stats"><span>الإمدادات<strong>مسترجعة</strong></span><span>التهديدات<strong>تمت إزالتها</strong></span><span>التجمع<strong>تم الوصول</strong></span></div><button id="victory-next">المرحلة التالية ←</button><button id="victory-restart" class="secondary">إعادة المرحلة</button></div></div>
+        <div id="pause-screen" aria-hidden="true"><div class="pause-card"><span class="eyebrow">PAUSE</span><h2>Mission suspendue</h2><p>Votre progression est conservée pendant cette session.</p><button id="resume-button">REPRENDRE</button><button id="restart-button" class="secondary">RECOMMENCER</button></div></div>
+        <div id="damage-flash" aria-hidden="true"></div><div id="toast" role="status"></div>
+        <div id="mobile-controls">
+          <div id="joystick" aria-label="Joystick de déplacement"><div id="stick"></div></div>
+          <div class="mobile-actions">
+            <button id="jump-button" aria-label="Sauter"><span>↑</span><small>قفز</small></button>
+            <button id="reload-button" aria-label="Recharger"><span>↻</span><small>تلقيم</small></button>
+            <button id="aim-button" aria-label="Activer la visée"><span>◎</span><small>تصويب</small></button>
+            <button id="sprint-button" aria-label="Courir"><span>⚡</span><small>ركض</small></button>
+            <button id="hide-button" aria-label="Se mettre à couvert"><span>▣</span><small>احتماء</small></button>
+            <button id="fire-button" aria-label="Maintenir pour tirer"><span>إطلاق</span></button>
+          </div>
+        </div>
+        <div id="start-screen"><div class="start-card">
+          <span class="eyebrow">نسخة تجريبية · مهمة قابلة للعب</span>
+          <h1>ALGERIAN REVOLUTION</h1>
+          <p>Une mission d'action en 3D dans un environnement montagneux inspiré de l'Algérie. Les soldats sont des personnages 3D animés ; la scène est une représentation fictive et non une reconstitution historique certifiée.</p>
+          <div class="identity-strip"><span class="flag">🇩🇿</span><span>الزي الجزائري</span><span>🏔️ تضاريس جبلية</span><span>🌿 أماكن الاحتماء</span><span class="flag">🇫🇷</span><span>الزي الفرنسي</span></div>
+          <div class="outfit-picker"><strong>CHOISIR L'ÉQUIPEMENT</strong><button id="outfit-algerian" type="button">🇩🇿 Tenue algérienne</button><button id="outfit-french" type="button">🇫🇷 Tenue française</button><small>أزياء مبسطة داخل اللعبة.</small></div>
+          <div class="howto"><strong>طريقة التحكم</strong><ol>
+            <li><b>الحركة:</b> حرّك العصا أسفل اليسار.</li>
+            <li><b>Caméra / regard :</b> posez le doigt sur une zone vide de l'écran et faites glisser. À droite = regarder à droite ; à gauche = regarder à gauche ; vers le haut = lever le regard.</li>
+            <li><b>التصويب والإطلاق:</b> اضغط تصويب ثم استمر بالضغط على إطلاق.</li>
+            <li><b>Caméra :</b> ARRlÈRE / أمام change le côté de vue ; ＋ rapproche ; － éloigne ; ↺ réinitialise.</li>
+            <li><b>المهمة:</b> اقترب من الصندوق واسترجعه، ثم أسقط الأعداء وتوجه إلى العلامة الخضراء.</li>
+          </ol><small>Sur téléphone, jouez en mode paysage. Les boutons d'action ne déplacent pas la caméra.</small></div>
+          <button id="start-button">ابدأ المهمة</button>
+          <small>تحتاج الشخصيات المتحركة إلى اتصال بالإنترنت لتحميل النموذج ثلاثي الأبعاد.</small>
+        </div></div>
+      </section>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
