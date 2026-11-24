@@ -204,6 +204,8 @@ function addConcealmentBush(x:number,z:number):void {
   coverZones.push({position:new THREE.Vector3(x,0,z),radius:4.8});
 }
 for(const [x,z] of [[-5,-18],[9,-11],[-15,-31],[18,-39],[25,-61],[-32,-65],[40,10],[-40,15],[53,-22],[-57,-5],[12,34],[-18,48]] as number[][]) addConcealmentBush(x,z);
+// Defensive structures also provide valid cover for crouching and breaking enemy line of sight.
+for(const [x,z,radius] of [[11,-23,6],[-13,-39,6],[-5.5,-14,5],[5.2,-31,5],[15,-42,4]] as number[][]) coverZones.push({position:new THREE.Vector3(x,0,z),radius});
 function isPlayerInCover():boolean {
   return coverZones.some(zone => Math.hypot(player.position.x-zone.position.x,player.position.z-zone.position.z) < zone.radius);
 }
@@ -774,7 +776,7 @@ window.addEventListener('blur', stopFiring);
 function toggleHide(): void {
   if (!started || paused || gameOver) return;
   if (!crouching) {
-    if (!isPlayerInCover()) { notify('اقترب من الشجيرات أو الغطاء الصخري أولاً حتى تختبئ.'); return; }
+    if (!isPlayerInCover()) { notify('اقترب من الشجيرات أو التحصينات أولاً حتى تختبئ.'); return; }
     crouching = true; playerHidden = true; player.scale.y = 0.72;
     $('#hide-button').classList.add('active'); $('#hide-button').textContent = 'خروج';
     notify('أنت مختبئ داخل الغطاء؛ الدوريات لن ترصدك ما دمت في منطقة التمويه.');
