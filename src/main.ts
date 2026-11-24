@@ -937,6 +937,74 @@ $('#start-button').addEventListener('click', () => {
 });
 $('#cinematic-enter').addEventListener('click', closeMissionBriefing);
 
+function refreshMainMenu(): void {
+  const chapter = campaignChapter(campaignStage);
+  const sector = campaignSector(campaignStage);
+  const title = campaignStageTitle(campaignStage);
+  const values: Record<string,string> = {
+    '#menu-operation-number': String(campaignStage).padStart(2,'0'),
+    '#menu-operation-year': chapter.year + ' · ' + sector.name,
+    '#menu-operation-title': title,
+    '#menu-operation-description': chapter.description,
+    '#menu-progress-text': (campaignStage - 1) + ' / 100',
+    '#dossier-index': 'OPERATION ' + String(campaignStage).padStart(2,'0') + ' / 100',
+    '#dossier-title': title,
+    '#dossier-description': chapter.description,
+    '#dossier-region': sector.name,
+    '#dossier-year': chapter.year
+  };
+  for (const [selector,value] of Object.entries(values)) {
+    const node = document.querySelector<HTMLElement>(selector);
+    if (node) node.textContent = value;
+  }
+  const progress = document.querySelector<HTMLElement>('#menu-progress-bar');
+  if (progress) progress.style.width = Math.max(0,campaignStage - 1) + '%';
+}
+document.querySelectorAll<HTMLButtonElement>('[data-menu-tab]').forEach((button) => {
+  button.addEventListener('click', () => {
+    const key = button.dataset.menuTab;
+    if (!key) return;
+    document.querySelectorAll('.menu-tab').forEach((item) => item.classList.toggle('active', item === button));
+    document.querySelectorAll<HTMLElement>('[data-menu-panel]').forEach((panel) => {
+      panel.classList.toggle('active', panel.dataset.menuPanel === key);
+    });
+    refreshMainMenu();
+  });
+});
+$('#missions-start').addEventListener('click', () => {
+  try { launchMissionBriefing(); }
+  catch (error) { console.error('Mission dossier launch failed:',error); beginGame(); }
+});
+$('#graphics-quality').addEventListener('change', (event) => {
+  const quality = (event.currentTarget as HTMLSelectElement).value;
+  const ratio = quality === 'low' ? 1 : quality === 'high' ? 1.7 : Math.min(window.devicePixelRatio,1.3);
+  renderer.setPixelRatio(ratio);
+  renderer.setSize(viewWidth(),viewHeight(),false);
+  if (quality === 'low') {
+    renderer.shadowMap.enabled = false;
+    sun.castShadow = false;
+    const shadows = document.querySelector<HTMLInputElement>('#shadows-toggle');
+    if (shadows) shadows.checked = false;
+  } else {
+    const shadows = document.querySelector<HTMLInputElement>('#shadows-toggle');
+    const enabled = quality === 'high' && !!shadows?.checked;
+    renderer.shadowMap.enabled = enabled;
+    sun.castShadow = enabled;
+  }
+});
+$('#shadows-toggle').addEventListener('change', (event) => {
+  const enabled = (event.currentTarget as HTMLInputElement).checked;
+  renderer.shadowMap.enabled = enabled;
+  sun.castShadow = enabled;
+  if (enabled && (document.querySelector<HTMLSelectElement>('#graphics-quality')?.value === 'low')) {
+    const quality = document.querySelector<HTMLSelectElement>('#graphics-quality');
+    if (quality) quality.value = 'medium';
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.3));
+  }
+});
+refreshMainMenu();
+
+
 function pauseGame(): void {
   if (!started || gameOver || paused) return;
   paused = true;
