@@ -99,7 +99,12 @@ const keys = new Set<string>();
 let started = false;
 let health = 100;
 let ammo = 12;
+let reserveAmmo = 48;
 let missionDone = false;
+let gameOver = false;
+let lookPointer: number | null = null;
+let lastTouchX = 0;
+let lastTouchY = 0;
 let yaw = 0;
 let pitch = -0.12;
 let verticalVelocity = 0;
@@ -129,17 +134,35 @@ function notify(message: string): void {
 function updateHud(): void {
   $('#health-value').textContent = `${health}%`;
   $('#health-meter').style.width = `${health}%`;
-  $('#ammo-value').textContent = `${ammo} / 12`;
+  $('#ammo-value').textContent = `${ammo} / ${reserveAmmo}`;
   $('#mission-progress').style.width = missionDone ? '100%' : '0%';
   $('#mission-status').textContent = missionDone ? 'اكتمل الهدف الأول — أحسنت!' : 'الهدف: الوصول إلى نقطة التجمع';
 }
 
-$('#start-button').addEventListener('click', () => {
+function resetEnemies(): void {
+  for (const enemy of enemies) scene.remove(enemy);
+  enemies.length = 0;
+  enemyMeshes.length = 0;
+  for (let i = 0; i < 4; i++) {
+    const enemy = makePerson(0x55594e, 0.95);
+    enemy.position.set((i - 1.5) * 5.5, 0, -15 - (i % 2) * 5);
+    scene.add(enemy);
+    enemies.push(enemy);
+    enemy.traverse((part) => { if (part instanceof THREE.Mesh) enemyMeshes.push(part); });
+  }
+}
+function beginGame(): void {
+  if (gameOver) {
+    health = 100; ammo = 12; reserveAmmo = 48; missionDone = false; gameOver = false;
+    player.position.set(0, 0, 9); player.rotation.set(0, 0, 0);
+    verticalVelocity = 0; onGround = true; resetEnemies(); updateHud();
+  }
   started = true;
   startScreen.style.display = 'none';
   if (window.matchMedia('(pointer:fine)').matches) renderer.domElement.requestPointerLock();
   notify('تحرّك نحو العلامة الذهبية في الممر.');
-});
+}
+$('#start-button').addEventListener('click', beginGame);
 document.addEventListener('pointerlockchange', () => {
   if (document.pointerLockElement !== renderer.domElement && started) {
     // Keyboard movement remains available after the pointer is released.
@@ -150,15 +173,35 @@ document.addEventListener('mousemove', (event) => {
   yaw -= event.movementX * 0.0022;
   pitch = THREE.MathUtils.clamp(pitch - event.movementY * 0.0018, -0.7, 0.45);
 });
+renderer.domElement.addEventListener('pointerdown', (event) => {
+  if (event.pointerType !== 'touch' || !started) return;
+  lookPointer = event.pointerId; lastTouchX = event.clientX; lastTouchY = event.clientY;
+});
+renderer.domElement.addEventListener('pointermove', (event) => {
+  if (event.pointerType !== 'touch' || lookPointer !== event.pointerId) return;
+  const dx = event.clientX - lastTouchX; const dy = event.clientY - lastTouchY;
+  lastTouchX = event.clientX; lastTouchY = event.clientY;
+  yaw -= dx * 0.006; pitch = THREE.MathUtils.clamp(pitch - dy * 0.004, -0.7, 0.45);
+});
+const releaseLook = (event: PointerEvent) => { if (lookPointer === event.pointerId) lookPointer = null; };
+renderer.domElement.addEventListener('pointerup', releaseLook);
+renderer.domElement.addEventListener('pointercancel', releaseLook);
 document.addEventListener('keydown', (event) => {
   keys.add(event.code);
   if (event.code === 'Space') event.preventDefault();
 });
 document.addEventListener('keyup', (event) => keys.delete(event.code));
+function reloadWeapon(): void {
+  if (!started || ammo === 12 || reserveAmmo <= 0) return;
+  const loaded = Math.min(12 - ammo, reserveAmmo);
+  ammo += loaded; reserveAmmo -= loaded; updateHud(); notify('تم تلقيم السلاح.');
+}
+document.addEventListener('keydown', (event) => { if (event.code === 'KeyR' && !event.repeat) reloadWeapon(); });
+$('#reload-button').addEventListener('click', reloadWeapon);
 window.addEventListener('blur', () => keys.clear());
 
 function shoot(): void {
-  if (!started || ammo <= 0) {
+  if (!started || gameOver || ammo <= 0) {
     if (ammo <= 0) notify('انتهت الذخيرة في هذا النموذج التجريبي.');
     return;
   }
@@ -187,7 +230,7 @@ function shoot(): void {
 }
 document.addEventListener('mousedown', (event) => { if (event.button === 0) shoot(); });
 $('#fire-button').addEventListener('click', shoot);
-$('#jump-button').addEventListener('click', () => { if (onGround) { verticalVelocity = 6.2; onGround = false; } });
+$('#jump-button').addEventListener('click', () => { if (started && !gameOver && onGround) { verticalVelocity = 6.2; onGround = false; } });
 
 const joystick = $('#joystick');
 const stick = $('#stick');
@@ -217,12 +260,12 @@ function animate(): void {
   marker.position.y = Math.sin(time * 2) * 0.12;
   ring.rotation.z += delta * 0.65;
 
-  if (started) {
+  if (started && !gameOver) {
     const inputX = (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0) + touchX;
-    const inputZ = (keys.has('KeyS') ? 1 : 0) - (keys.has('KeyW') ? 1 : 0) + touchY;
+    const inputZ = (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0) - touchY;
     forward.set(-Math.sin(yaw), 0, -Math.cos(yaw));
     right.set(Math.cos(yaw), 0, -Math.sin(yaw));
-    direction.set(0, 0, 0).addScaledVector(right, inputX).addScaledVector(forward, -inputZ);
+    direction.set(0, 0, 0).addScaledVector(right, inputX).addScaledVector(forward, inputZ);
     if (direction.lengthSq() > 0.01) {
       direction.normalize();
       const speed = keys.has('ShiftLeft') ? 8.5 : 5.2;
@@ -253,7 +296,12 @@ function animate(): void {
       if (distance < 3.2 && Math.random() < delta * 0.22) {
         health = Math.max(0, health - 5);
         updateHud();
-        if (health === 0) notify('انخفضت الحالة إلى الصفر — أعد تشغيل النموذج.');
+        if (health === 0) {
+          gameOver = true; started = false;
+          $('#start-button').textContent = 'إعادة المحاولة';
+          startScreen.style.display = 'grid';
+          notify('انتهت المحاولة. يمكنك البدء من جديد.');
+        }
       }
       enemy.position.y = 0;
       enemy.rotation.y += Math.sin(time + index) * delta * 0.03;
