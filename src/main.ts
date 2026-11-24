@@ -913,7 +913,9 @@ function beginGame(): void {
         if (!document.fullscreenElement && rootElement.requestFullscreen) await rootElement.requestFullscreen();
         await orientation.lock?.('landscape');
       } catch {
-        document.body.classList.add('needs-landscape');
+        // Orientation lock/fullscreen may be unavailable in Android in-app browsers.
+        // Keep the game visible and playable in portrait instead of hiding #app.
+        document.body.classList.remove('needs-landscape');
       }
     };
     void enterLandscape();
