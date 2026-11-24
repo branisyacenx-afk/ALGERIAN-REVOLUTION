@@ -1060,6 +1060,8 @@ function animate(): void {
         enemy.position.addScaledVector(toward, delta * 0.82);
         setCharacterAnimation(enemy, 'Walk');
         enemy.lookAt(player.position.x, enemy.position.y, player.position.z);
+        // Soldier model's forward axis is local -Z; lookAt points local +Z at the target.
+        enemy.rotation.y += Math.PI;
       } else if (distance >= 22) {
         const phase = time * 0.42 + (enemy.userData.patrolPhase as number);
         const patrolX = (enemy.userData.patrolX as number) + Math.sin(phase) * 2.2;
@@ -1072,6 +1074,7 @@ function animate(): void {
       enemy.userData.fireCooldown = Math.max(0, (enemy.userData.fireCooldown as number) - delta);
       if (!playerHidden && distance >= 7 && distance < 25 && enemy.userData.fireCooldown <= 0) {
         enemy.lookAt(player.position.x, enemy.position.y, player.position.z);
+        enemy.rotation.y += Math.PI;
         const from = enemy.position.clone().add(new THREE.Vector3(0, 1.35, 0));
         const to = player.position.clone().add(new THREE.Vector3(0, 1.0, 0));
         const lineGeometry = new THREE.BufferGeometry().setFromPoints([from, to]);
