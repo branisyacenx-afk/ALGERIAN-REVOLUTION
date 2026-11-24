@@ -856,7 +856,39 @@ function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
     enemy.traverse((part) => { if (part instanceof THREE.Mesh) enemyMeshes.push(part); });
   }
 }
+let cinematicTimer: number | null = null;
+function launchMissionBriefing(): void {
+  if (cinematicTimer !== null) window.clearTimeout(cinematicTimer);
+  const chapter = campaignChapter(campaignStage);
+  const sector = campaignSector(campaignStage);
+  const plan = campaignStage % 3 === 1
+    ? 'استرجع الإمدادات، ثم تعامل مع التهديدات قبل التقدم.'
+    : campaignStage % 3 === 2
+      ? 'تحرك بين نقاط الاحتماء وراقب محاور تقدم العدو.'
+      : 'احمِ فريقك، أمّن الطريق، ثم توجه إلى نقطة التجمع.';
+  $('#cinema-counter').textContent = `OPÉRATION ${String(campaignStage).padStart(2,'0')} / 100`;
+  $('#cinema-year').textContent = chapter.year;
+  $('#cinema-title').textContent = chapter.title;
+  $('#cinema-description').textContent = chapter.description;
+  $('#cinema-sector').textContent = sector.name;
+  $('#cinema-objective').textContent = campaignStageTitle(campaignStage);
+  $('#cinema-plan').textContent = plan;
+  $('#mission-cinematic').classList.add('visible');
+  $('#mission-cinematic').setAttribute('aria-hidden','false');
+  startScreen.style.display = 'none';
+  document.body.classList.remove('game-started');
+  cinematicTimer = window.setTimeout(() => beginGame(), 5200);
+}
+function closeMissionBriefing(): void {
+  if (cinematicTimer !== null) window.clearTimeout(cinematicTimer);
+  cinematicTimer = null;
+  beginGame();
+}
 function beginGame(): void {
+  if (cinematicTimer !== null) window.clearTimeout(cinematicTimer);
+  cinematicTimer = null;
+  $('#mission-cinematic').classList.remove('visible');
+  $('#mission-cinematic').setAttribute('aria-hidden','true');
   health = 100; stamina = 100; damageCooldown = 0; ammo = 12; reserveAmmo = 48;
   gameOver = false; reloading = false; aiming = false; crouching = false; playerHidden = false;
   player.scale.set(1,1,1); $('#hide-button').classList.remove('active'); $('#hide-button').innerHTML = '<span>▣</span><small>احتماء</small>';
@@ -888,7 +920,8 @@ function beginGame(): void {
 }
 $('#outfit-algerian').addEventListener('click', () => setPlayerOutfit('algerian'));
 $('#outfit-french').addEventListener('click', () => setPlayerOutfit('french'));
-$('#start-button').addEventListener('click', beginGame);
+$('#start-button').addEventListener('click', launchMissionBriefing);
+$('#cinematic-enter').addEventListener('click', closeMissionBriefing);
 
 function pauseGame(): void {
   if (!started || gameOver || paused) return;
@@ -913,19 +946,19 @@ $('#victory-next').addEventListener('click', () => {
   campaignStage += 1;
   localStorage.setItem('algerian-revolution-stage', String(campaignStage));
   $('#victory-screen').classList.remove('visible');
-  paused = false; gameOver = false; beginGame();
+  paused = false; gameOver = false; launchMissionBriefing();
 });
 $('#victory-restart').addEventListener('click', () => {
   $('#victory-screen').classList.remove('visible');
   paused = false;
   gameOver = true;
-  beginGame();
+  launchMissionBriefing();
 });
 $('#restart-button').addEventListener('click', () => {
   paused = false;
   gameOver = true;
   $('#pause-screen').classList.remove('visible');
-  beginGame();
+  launchMissionBriefing();
 });
 document.addEventListener('pointerlockchange', () => {
   if (document.pointerLockElement !== renderer.domElement && started) {
