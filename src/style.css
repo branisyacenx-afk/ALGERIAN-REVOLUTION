@@ -189,3 +189,20 @@ body.game-started #mobile-controls{display:flex;visibility:visible}
 #mobile-controls{direction:ltr;z-index:30}
 #start-screen{z-index:40}
 #joystick,#look-area,.mobile-actions button{touch-action:none;-webkit-user-select:none;user-select:none}
+
+/* Gameplay usability pass: readable pickup action and adjustable third-person camera. */
+#pickup-button{display:none;position:absolute;left:50%;top:66%;transform:translateX(-50%);z-index:35;min-width:190px;padding:13px 18px;border:2px solid #f2d28c;border-radius:13px;background:#a66a2eee;color:#fff8e8;font-size:14px;font-weight:800;box-shadow:0 5px 22px #0009;pointer-events:auto;touch-action:manipulation}
+#pickup-button.visible{display:block}
+#pickup-button:disabled{opacity:.78}
+#camera-zoom-controls{position:absolute;right:16px;top:50%;transform:translateY(-50%);z-index:34;display:flex;flex-direction:column;gap:8px;pointer-events:auto}
+#camera-zoom-controls button{width:42px;height:42px;border-radius:50%;border:1px solid #f1dfb988;background:#17251dcc;color:#fff;font-size:25px;font-weight:700;box-shadow:0 3px 12px #0008;touch-action:manipulation}
+#look-area{width:56% !important;height:70% !important;top:12% !important;z-index:4}
+#look-area span{top:48% !important;opacity:.72}
+@media(max-width:900px){
+ #pickup-button{top:58%;min-width:170px;padding:11px 14px;font-size:12px}
+ #camera-zoom-controls{right:12px;top:45%;gap:6px}
+ #camera-zoom-controls button{width:36px;height:36px;font-size:21px}
+}
+body:not(.game-started) #pickup-button,body:not(.game-started) #camera-zoom-controls{display:none !important}
+body.game-started #camera-zoom-controls{display:flex}
+body:not(.game-started) #camera-zoom-controls{display:none}

@@ -13,7 +13,7 @@ const isPortraitTouch = () => window.innerHeight > window.innerWidth && window.i
 document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
 const viewWidth = () => isPortraitTouch() ? window.innerHeight : window.innerWidth;
 const viewHeight = () => isPortraitTouch() ? window.innerWidth : window.innerHeight;
-const camera = new THREE.PerspectiveCamera(65, viewWidth() / viewHeight(), 0.1, 250);
+const camera = new THREE.PerspectiveCamera(76, viewWidth() / viewHeight(), 0.1, 300);
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
 renderer.setSize(viewWidth(), viewHeight());
@@ -228,7 +228,8 @@ let lookPointer: number | null = null;
 let lastTouchX = 0;
 let lastTouchY = 0;
 let yaw = 0;
-let pitch = -0.12;
+let pitch = -0.10;
+let cameraDistance = 7.2;
 let verticalVelocity = 0;
 let onGround = true;
 const clock = new THREE.Clock();
@@ -291,7 +292,7 @@ function beginGame(): void {
     health = 100; stamina = 100; damageCooldown = 0; ammo = 12; reserveAmmo = 48; missionDone = false; suppliesCollected = false; goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false; gameOver = false;
     supplyCache.visible = true;
     player.position.set(0, 0, 9); player.rotation.set(0, 0, 0);
-    yaw = 0; pitch = -0.12;
+    yaw = 0; pitch = -0.10; cameraDistance = 7.2;
     verticalVelocity = 0; onGround = true; resetEnemies(); updateHud();
 document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
   }
@@ -359,8 +360,8 @@ document.addEventListener('pointerlockchange', () => {
 });
 document.addEventListener('mousemove', (event) => {
   if (!started || document.pointerLockElement !== renderer.domElement) return;
-  yaw -= event.movementX * 0.0022;
-  pitch = THREE.MathUtils.clamp(pitch - event.movementY * 0.0018, -0.7, 0.45);
+  yaw -= event.movementX * 0.0032;
+  pitch = THREE.MathUtils.clamp(pitch - event.movementY * 0.0026, -0.72, 0.45);
 });
 const lookArea = $('#look-area');
 lookArea.addEventListener('pointerdown', (event) => {
@@ -373,8 +374,8 @@ lookArea.addEventListener('pointermove', (event) => {
   if (event.pointerType !== 'touch' || lookPointer !== event.pointerId) return;
   const dx = event.clientX - lastTouchX; const dy = event.clientY - lastTouchY;
   lastTouchX = event.clientX; lastTouchY = event.clientY;
-  yaw -= dx * 0.0042;
-  pitch = THREE.MathUtils.clamp(pitch - dy * 0.0032, -0.62, 0.34);
+  yaw -= dx * 0.009;
+  pitch = THREE.MathUtils.clamp(pitch - dy * 0.006, -0.72, 0.42);
 });
 const releaseLook = (event: PointerEvent) => { if (lookPointer === event.pointerId) lookPointer = null; };
 lookArea.addEventListener('pointerup', releaseLook);
@@ -392,8 +393,8 @@ function reloadWeapon(): void {
 }
 function interact(): void {
   if (!started || gameOver || suppliesCollected) return;
-  if (player.position.distanceTo(supplyCache.position) > 2.7) {
-    notify('اقترب من صندوق الإمدادات للتفاعل معه.');
+  if (player.position.distanceTo(supplyCache.position) > 4.4) {
+    notify('اقترب أكثر من صندوق الإمدادات حتى يظهر زر الالتقاط.');
     return;
   }
   suppliesCollected = true;
@@ -408,6 +409,9 @@ document.addEventListener('keydown', (event) => {
 });
 $('#reload-button').addEventListener('click', reloadWeapon);
 $('#interact-hint').addEventListener('click', interact);
+$('#pickup-button').addEventListener('click', interact);
+$('#camera-zoom-in').addEventListener('click', () => { cameraDistance = Math.max(4.8, cameraDistance - 0.7); notify('تم تقريب الكاميرا.'); });
+$('#camera-zoom-out').addEventListener('click', () => { cameraDistance = Math.min(11, cameraDistance + 0.8); notify('تم إبعاد الكاميرا.'); });
 window.addEventListener('blur', () => keys.clear());
 
 function shoot(): void {
@@ -599,8 +603,13 @@ function animate(): void {
         notify('اكتملت المهمة: الإمدادات جُمعت والطريق أُمّن ووصلت إلى التجمع.');
       }
     }
-    const nearCache = !suppliesCollected && player.position.distanceTo(supplyCache.position) < 3.5;
+    const cacheDistance = player.position.distanceTo(supplyCache.position);
+    const nearCache = !suppliesCollected && cacheDistance < 5.2;
     $('#interact-hint').classList.toggle('visible', nearCache);
+    const pickupButton = $('#pickup-button');
+    pickupButton.classList.toggle('visible', nearCache);
+    pickupButton.disabled = !nearCache;
+    pickupButton.textContent = cacheDistance < 4.4 ? 'التقط صندوق الإمدادات' : `اقترب من الصندوق · ${Math.ceil(cacheDistance)}م`;
     enemies.forEach((enemy, index) => {
       if (enemy.parent === null) return;
       const distance = enemy.position.distanceTo(player.position);
@@ -634,9 +643,9 @@ function animate(): void {
       enemy.rotation.y += Math.sin(time + index) * delta * 0.03;
     });
 
-    const cameraOffset = new THREE.Vector3(Math.sin(yaw) * 5.2, 3.1 + pitch * 1.8, Math.cos(yaw) * 5.2);
+    const cameraOffset = new THREE.Vector3(Math.sin(yaw) * cameraDistance, 3.6 + pitch * 2.2, Math.cos(yaw) * cameraDistance);
     const cameraTarget = player.position.clone().add(new THREE.Vector3(0, 1.35, 0));
-    camera.position.lerp(cameraTarget.clone().add(cameraOffset), 1 - Math.pow(0.001, delta));
+    camera.position.lerp(cameraTarget.clone().add(cameraOffset), 1 - Math.pow(0.00008, delta));
     camera.lookAt(cameraTarget);
   } else if (!started) {
     camera.position.set(Math.sin(time * 0.08) * 34, 19, 35);
