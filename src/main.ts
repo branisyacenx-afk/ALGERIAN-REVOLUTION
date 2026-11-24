@@ -525,8 +525,8 @@ function attachSoldierModel(actor: THREE.Group, tint: number): void {
   const fitScale = size.y > 0.01 ? 1.86 / size.y : 1;
   model.scale.setScalar(fitScale);
   model.position.y = -bounds.min.y * fitScale;
-  // Mixamo's sample soldier faces +Z; the game actors face -Z.
-  model.rotation.y = Math.PI;
+  // Keep the imported rig's native facing aligned with the procedural soldier (-Z).
+  // A 180-degree extra rotation made the uniformed soldier move with his back forward.
   model.traverse((part) => {
     if (!(part instanceof THREE.Mesh)) return;
     part.castShadow = true;
