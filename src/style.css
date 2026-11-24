@@ -19,3 +19,12 @@ canvas{touch-action:none} .mobile-actions #reload-button{font-size:27px;backgrou
 .mobile-actions #sprint-button{background:#77824bbb;font-size:22px}
 .mobile-actions #sprint-button.active{background:#d6b77a;color:#172018;transform:scale(.94)}
 @media(max-width:700px){.stamina{width:78px}.bottom-hud{gap:9px}.mobile-actions{gap:7px}.mobile-actions button{width:49px;height:49px}}
+
+#radar-panel{position:absolute;left:24px;top:105px;width:194px;padding:9px;background:#101914c9;border:1px solid #d0b77a55;border-radius:12px;backdrop-filter:blur(9px)}
+.radar-title{font-size:11px;color:#e2c98f;margin:0 0 5px;text-align:center}
+#radar{display:block;width:174px;height:174px;border-radius:50%;background:#17251dcf;border:1px solid #c6a66a66}
+.radar-legend{display:flex;justify-content:space-between;gap:3px;margin-top:5px;font-size:8px;color:#d4d0c5}
+.radar-legend span:nth-child(1){color:#e9e2c8}.radar-legend span:nth-child(2){color:#e58b77}.radar-legend span:nth-child(3){color:#e9c36f}.radar-legend span:nth-child(4){color:#8bc18c}
+#damage-flash{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,transparent 35%,#b3262699 100%);transition:opacity .12s}
+#damage-flash.active{opacity:1}
+@media(max-width:700px){#radar-panel{left:10px;top:78px;width:126px;padding:6px}#radar{width:110px;height:110px}.radar-legend{font-size:6px;gap:2px}.radar-title{font-size:9px}.mission{top:80px;right:10px;width:calc(100vw - 154px);min-width:150px}.mission strong{font-size:13px}}

@@ -146,6 +146,9 @@ const enemies: THREE.Group[] = [];
 for (let i = 0; i < 4; i++) {
   const enemy = makePerson(0x55594e, 0.95);
   enemy.position.set((i - 1.5) * 5.5, 0, -15 - (i % 2) * 5);
+  enemy.userData.patrolX = enemy.position.x;
+  enemy.userData.patrolZ = enemy.position.z;
+  enemy.userData.patrolPhase = i * 1.7;
   scene.add(enemy);
   enemies.push(enemy);
 }
@@ -199,6 +202,8 @@ let suppliesCollected = false;
 let goalNeedsSuppliesNotified = false;
 let goalNeedsEnemiesNotified = false;
 let gameOver = false;
+let damageCooldown = 0;
+let radarElapsed = 0;
 let lookPointer: number | null = null;
 let lastTouchX = 0;
 let lastTouchY = 0;
@@ -252,6 +257,9 @@ function resetEnemies(): void {
   for (let i = 0; i < 4; i++) {
     const enemy = makePerson(0x55594e, 0.95);
     enemy.position.set((i - 1.5) * 5.5, 0, -15 - (i % 2) * 5);
+    enemy.userData.patrolX = enemy.position.x;
+    enemy.userData.patrolZ = enemy.position.z;
+    enemy.userData.patrolPhase = i * 1.7;
     scene.add(enemy);
     enemies.push(enemy);
     enemy.traverse((part) => { if (part instanceof THREE.Mesh) enemyMeshes.push(part); });
@@ -259,7 +267,7 @@ function resetEnemies(): void {
 }
 function beginGame(): void {
   if (gameOver) {
-    health = 100; stamina = 100; ammo = 12; reserveAmmo = 48; missionDone = false; suppliesCollected = false; goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false; gameOver = false;
+    health = 100; stamina = 100; damageCooldown = 0; ammo = 12; reserveAmmo = 48; missionDone = false; suppliesCollected = false; goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false; gameOver = false;
     supplyCache.visible = true;
     player.position.set(0, 0, 9); player.rotation.set(0, 0, 0);
     verticalVelocity = 0; onGround = true; resetEnemies(); updateHud();
@@ -385,10 +393,41 @@ const releaseJoystick = () => { joystickPointer = null; touchX = 0; touchY = 0; 
 joystick.addEventListener('pointerup', releaseJoystick);
 joystick.addEventListener('pointercancel', releaseJoystick);
 
+const radarCanvas = $('#radar') as HTMLCanvasElement;
+const radarContext = radarCanvas.getContext('2d');
+if (!radarContext) throw new Error('Radar canvas is unavailable');
+function drawRadar(): void {
+  const ctx = radarContext!;
+  const w = radarCanvas.width, h = radarCanvas.height;
+  const cx = w / 2, cy = h / 2, range = 38, scale = (w * 0.43) / range;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#17251d'; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = '#b7a47755'; ctx.lineWidth = 1;
+  for (const radius of [0.33, 0.66, 1]) {
+    ctx.beginPath(); ctx.arc(cx, cy, w * 0.43 * radius, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+  const plot = (x: number, z: number, color: string, radius: number) => {
+    const px = cx + (x - player.position.x) * scale;
+    const py = cy + (z - player.position.z) * scale;
+    if (px < 3 || px > w - 3 || py < 3 || py > h - 3) return;
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(px, py, radius, 0, Math.PI * 2); ctx.fill();
+  };
+  if (!suppliesCollected) plot(supplyCache.position.x, supplyCache.position.z, '#e9c36f', 4);
+  plot(marker.position.x, marker.position.z, '#8bc18c', 5);
+  enemies.forEach((enemy) => plot(enemy.position.x, enemy.position.z, '#e58b77', 3.5));
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(-yaw);
+  ctx.fillStyle = '#f2e6c9'; ctx.strokeStyle = '#17251d'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(6, 7); ctx.lineTo(0, 4); ctx.lineTo(-6, 7); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
 function animate(): void {
   requestAnimationFrame(animate);
   const delta = Math.min(clock.getDelta(), 0.04);
   const time = clock.elapsedTime;
+  damageCooldown = Math.max(0, damageCooldown - delta);
+  radarElapsed += delta;
+  if (radarElapsed >= 0.12) { drawRadar(); radarElapsed = 0; }
   marker.position.y = Math.sin(time * 2) * 0.12;
   ring.rotation.z += delta * 0.65;
 
@@ -445,13 +484,23 @@ function animate(): void {
     enemies.forEach((enemy, index) => {
       if (enemy.parent === null) return;
       const distance = enemy.position.distanceTo(player.position);
-      if (distance < 14 && distance > 3.2) {
+      if (distance < 22 && distance > 3.0) {
         const toward = player.position.clone().sub(enemy.position).setY(0).normalize();
-        enemy.position.addScaledVector(toward, delta * 0.65);
+        enemy.position.addScaledVector(toward, delta * 0.82);
         enemy.lookAt(player.position.x, enemy.position.y, player.position.z);
+      } else if (distance >= 22) {
+        const phase = time * 0.42 + (enemy.userData.patrolPhase as number);
+        const patrolX = (enemy.userData.patrolX as number) + Math.sin(phase) * 2.2;
+        const patrolZ = (enemy.userData.patrolZ as number) + Math.cos(phase * 0.7) * 1.5;
+        enemy.position.x = THREE.MathUtils.damp(enemy.position.x, patrolX, 1.5, delta);
+        enemy.position.z = THREE.MathUtils.damp(enemy.position.z, patrolZ, 1.5, delta);
+        enemy.rotation.y = Math.atan2(-(enemy.position.x - (enemy.userData.patrolX as number)), -(enemy.position.z - (enemy.userData.patrolZ as number)));
       }
-      if (distance < 3.2 && Math.random() < delta * 0.22) {
-        health = Math.max(0, health - 5);
+      if (distance < 3.2 && damageCooldown <= 0) {
+        health = Math.max(0, health - 8);
+        damageCooldown = 0.9;
+        $('#damage-flash').classList.add('active');
+        window.setTimeout(() => $('#damage-flash').classList.remove('active'), 180);
         updateHud();
         if (health === 0) {
           gameOver = true; started = false;
