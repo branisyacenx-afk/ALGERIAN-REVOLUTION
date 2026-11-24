@@ -554,31 +554,37 @@ document.addEventListener('mousemove', (event) => {
   yaw -= event.movementX * 0.0032;
   pitch = THREE.MathUtils.clamp(pitch - event.movementY * 0.0026, -0.72, 0.45);
 });
-const lookArea = $('#look-area');
-lookArea.addEventListener('contextmenu', (event) => event.preventDefault());
-lookArea.addEventListener('pointerdown', (event) => {
-  if (!started || paused || gameOver || missionDone) return;
-  // Accept touch and pen input; capture the pointer so camera movement
-  // continues smoothly even if the finger drifts beyond the look zone.
+// Full-screen touch camera: drag anywhere on the playfield, not just the right half.
+// Interactive controls retain their own gestures (joystick, fire, reload, pickup, menus).
+const cameraGestureExcluded = '#mobile-controls, button, input, select, textarea, a, .start-card, #pause-screen, #game-over-screen, #victory-screen';
+document.addEventListener('contextmenu', (event) => {
+  if (started && event.target instanceof Element && !event.target.closest(cameraGestureExcluded)) event.preventDefault();
+});
+document.addEventListener('pointerdown', (event) => {
+  if (!started || paused || gameOver || missionDone || event.button !== 0) return;
+  const target = event.target;
+  if (target instanceof Element && target.closest(cameraGestureExcluded)) return;
   event.preventDefault();
   lookPointer = event.pointerId;
-  lastTouchX = event.clientX; lastTouchY = event.clientY;
-  try { lookArea.setPointerCapture(event.pointerId); } catch { /* capture may be unavailable in embedded browsers */ }
-});
-lookArea.addEventListener('pointermove', (event) => {
+  lastTouchX = event.clientX;
+  lastTouchY = event.clientY;
+  try { renderer.domElement.setPointerCapture(event.pointerId); } catch { /* embedded browser fallback: document still receives pointer events */ }
+}, { capture: true, passive: false });
+document.addEventListener('pointermove', (event) => {
   if (lookPointer !== event.pointerId || !started || paused) return;
-  event.preventDefault();
-  const dx = event.clientX - lastTouchX; const dy = event.clientY - lastTouchY;
-  lastTouchX = event.clientX; lastTouchY = event.clientY;
+  if (event.pointerType !== 'mouse') event.preventDefault();
+  const dx = event.clientX - lastTouchX;
+  const dy = event.clientY - lastTouchY;
+  lastTouchX = event.clientX;
+  lastTouchY = event.clientY;
   yaw -= dx * (aiming ? 0.0065 : 0.0085);
   pitch = THREE.MathUtils.clamp(pitch - dy * (aiming ? 0.0048 : 0.006), -0.72, 0.42);
-});
+}, { passive: false });
 const releaseLook = (event: PointerEvent) => {
   if (lookPointer === event.pointerId) lookPointer = null;
 };
-lookArea.addEventListener('pointerup', releaseLook);
-lookArea.addEventListener('pointercancel', releaseLook);
-lookArea.addEventListener('lostpointercapture', releaseLook);
+document.addEventListener('pointerup', releaseLook, true);
+document.addEventListener('pointercancel', releaseLook, true);
 document.addEventListener('keydown', (event) => {
   keys.add(event.code);
   if (event.code === 'Space') event.preventDefault();
