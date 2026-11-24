@@ -137,12 +137,40 @@ marker.add(beam);
 marker.position.set(0, 0, -28);
 scene.add(marker);
 
+// Supply cache: a clearly marked first interaction, built from temporary geometry.
+const supplyCache = new THREE.Group();
+const cacheBody = new THREE.Mesh(
+  new THREE.BoxGeometry(1.25, 0.72, 0.9),
+  new THREE.MeshStandardMaterial({ color: 0x72583b, roughness: 0.9 })
+);
+cacheBody.position.y = 0.42;
+cacheBody.castShadow = true;
+supplyCache.add(cacheBody);
+const cacheLid = new THREE.Mesh(
+  new THREE.BoxGeometry(1.3, 0.16, 0.95),
+  new THREE.MeshStandardMaterial({ color: 0x9a7b4d, roughness: 0.8 })
+);
+cacheLid.position.y = 0.86;
+cacheLid.castShadow = true;
+supplyCache.add(cacheLid);
+const cacheMark = new THREE.Mesh(
+  new THREE.TorusGeometry(0.95, 0.07, 8, 28),
+  new THREE.MeshBasicMaterial({ color: 0xe9c36f })
+);
+cacheMark.rotation.x = Math.PI / 2;
+cacheMark.position.y = 0.12;
+supplyCache.add(cacheMark);
+supplyCache.position.set(-3, 0, -8);
+scene.add(supplyCache);
+
 const keys = new Set<string>();
 let started = false;
 let health = 100;
 let ammo = 12;
 let reserveAmmo = 48;
 let missionDone = false;
+let suppliesCollected = false;
+let goalNeedsSuppliesNotified = false;
 let gameOver = false;
 let lookPointer: number | null = null;
 let lastTouchX = 0;
@@ -177,8 +205,8 @@ function updateHud(): void {
   $('#health-value').textContent = `${health}%`;
   $('#health-meter').style.width = `${health}%`;
   $('#ammo-value').textContent = `${ammo} / ${reserveAmmo}`;
-  $('#mission-progress').style.width = missionDone ? '100%' : '0%';
-  $('#mission-status').textContent = missionDone ? 'اكتمل الهدف الأول — أحسنت!' : 'الهدف: الوصول إلى نقطة التجمع';
+  $('#mission-progress').style.width = missionDone ? '100%' : suppliesCollected ? '50%' : '0%';
+  $('#mission-status').textContent = missionDone ? 'اكتمل الهدف الأول — أحسنت!' : suppliesCollected ? 'الهدف: الوصول إلى نقطة التجمع' : 'الهدف: جمع صندوق الإمدادات (E)';
 }
 
 function resetEnemies(): void {
@@ -195,7 +223,8 @@ function resetEnemies(): void {
 }
 function beginGame(): void {
   if (gameOver) {
-    health = 100; ammo = 12; reserveAmmo = 48; missionDone = false; gameOver = false;
+    health = 100; ammo = 12; reserveAmmo = 48; missionDone = false; suppliesCollected = false; goalNeedsSuppliesNotified = false; gameOver = false;
+    supplyCache.visible = true;
     player.position.set(0, 0, 9); player.rotation.set(0, 0, 0);
     verticalVelocity = 0; onGround = true; resetEnemies(); updateHud();
   }
@@ -238,8 +267,24 @@ function reloadWeapon(): void {
   const loaded = Math.min(12 - ammo, reserveAmmo);
   ammo += loaded; reserveAmmo -= loaded; updateHud(); notify('تم تلقيم السلاح.');
 }
-document.addEventListener('keydown', (event) => { if (event.code === 'KeyR' && !event.repeat) reloadWeapon(); });
+function interact(): void {
+  if (!started || gameOver || suppliesCollected) return;
+  if (player.position.distanceTo(supplyCache.position) > 2.7) {
+    notify('اقترب من صندوق الإمدادات للتفاعل معه.');
+    return;
+  }
+  suppliesCollected = true;
+  supplyCache.visible = false;
+  reserveAmmo += 12;
+  updateHud();
+  notify('جمعت الإمدادات. تابع إلى نقطة التجمع.');
+}
+document.addEventListener('keydown', (event) => {
+  if (event.code === 'KeyR' && !event.repeat) reloadWeapon();
+  if (event.code === 'KeyE' && !event.repeat) interact();
+});
 $('#reload-button').addEventListener('click', reloadWeapon);
+$('#interact-hint').addEventListener('click', interact);
 window.addEventListener('blur', () => keys.clear());
 
 function shoot(): void {
@@ -326,10 +371,17 @@ function animate(): void {
 
     const distanceToGoal = player.position.distanceTo(marker.position);
     if (!missionDone && distanceToGoal < 3.2) {
-      missionDone = true;
-      updateHud();
-      notify('اكتملت المهمة التجريبية: وصلت إلى نقطة التجمع.');
+      if (suppliesCollected) {
+        missionDone = true;
+        updateHud();
+        notify('اكتملت المهمة التجريبية: وصلت إلى نقطة التجمع.');
+      } else if (!goalNeedsSuppliesNotified) {
+        goalNeedsSuppliesNotified = true;
+        notify('قبل التوجه إلى نقطة التجمع، اجمع صندوق الإمدادات.');
+      }
     }
+    const nearCache = !suppliesCollected && player.position.distanceTo(supplyCache.position) < 3.5;
+    $('#interact-hint').classList.toggle('visible', nearCache);
     enemies.forEach((enemy, index) => {
       if (enemy.parent === null) return;
       const distance = enemy.position.distanceTo(player.position);
