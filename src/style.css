@@ -273,3 +273,6 @@ body:not(.game-started) #camera-zoom-controls{display:none}
   #look-area span{pointer-events:none}
   #mobile-controls,#camera-zoom-controls,#pickup-button,#interact-hint{z-index:5}
 }
+
+/* Algerian field identity and stealth action. */
+#hide-button{min-width:66px;height:48px;padding:0 12px;border-radius:14px;border:2px solid #b6d0a0;background:linear-gradient(145deg,#234b32,#14271d);color:#f5f3df;font-size:12px;font-weight:900;box-shadow:0 4px 14px #0008;touch-action:manipulation}#hide-button.active{background:linear-gradient(145deg,#c2a35d,#7d5b27);border-color:#f3dfa4;color:#171b12;box-shadow:0 0 0 4px #d9c17a44,0 0 18px #d9c17a88}#hide-button:active{transform:scale(.95)}

@@ -8,14 +8,14 @@ if (!root) throw new Error('Game root not found');
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9ba99a);
-scene.fog = new THREE.Fog(0x9ba99a, 34, 150);
+scene.fog = new THREE.Fog(0x9ba99a, 48, 270);
 // Some Android in-app browsers report pointer/orientation media features unreliably.
 const isPortraitTouch = () => window.innerHeight > window.innerWidth && window.innerWidth < 1100;
 // Apply the simulated landscape layout immediately, before the start screen is shown.
 document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
 const viewWidth = () => isPortraitTouch() ? window.innerHeight : window.innerWidth;
 const viewHeight = () => isPortraitTouch() ? window.innerWidth : window.innerHeight;
-const camera = new THREE.PerspectiveCamera(76, viewWidth() / viewHeight(), 0.1, 300);
+const camera = new THREE.PerspectiveCamera(76, viewWidth() / viewHeight(), 0.1, 440);
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
 renderer.setSize(viewWidth(), viewHeight());
@@ -30,7 +30,7 @@ sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);
 scene.add(sun);
 
-const terrain = new THREE.Mesh(new THREE.PlaneGeometry(220, 220, 40, 40), new THREE.MeshStandardMaterial({ color: 0x777b5d, roughness: 1 }));
+const terrain = new THREE.Mesh(new THREE.PlaneGeometry(420, 420, 64, 64), new THREE.MeshStandardMaterial({ color: 0x777b5d, roughness: 1 }));
 terrain.rotation.x = -Math.PI / 2;
 terrain.receiveShadow = true;
 scene.add(terrain);
@@ -77,6 +77,20 @@ for (let i = 0; i < 26; i++) {
   scene.add(tree);
 }
 
+
+// Extended mountain woodland: distant tree groups create a much larger readable landscape.
+for (let i = 0; i < 52; i++) {
+  const angle = Math.random() * Math.PI * 2;
+  const radius = 24 + Math.random() * 128;
+  const tree = new THREE.Group();
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 1.7, 6), new THREE.MeshStandardMaterial({ color: 0x554533, roughness: 1 }));
+  trunk.position.y = 0.85; trunk.castShadow = true; tree.add(trunk);
+  const crown = new THREE.Mesh(new THREE.ConeGeometry(1.35 + Math.random() * 0.8, 3.8 + Math.random() * 1.6, 6), new THREE.MeshStandardMaterial({ color: i % 3 === 0 ? 0x3e5139 : 0x536044, flatShading: true, roughness: 1 }));
+  crown.position.y = 3.0; crown.castShadow = true; tree.add(crown);
+  tree.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius - 24);
+  tree.rotation.y = Math.random() * Math.PI * 2; scene.add(tree);
+}
+
 // Low-poly ridgelines are deliberate greybox placeholders, not final scanned locations.
 function ridge(x: number, z: number, sx: number, sy: number, sz: number, color: number): void {
   const mesh = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 5), new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 1 }));
@@ -87,9 +101,10 @@ function ridge(x: number, z: number, sx: number, sy: number, sz: number, color: 
   mesh.castShadow = true;
   scene.add(mesh);
 }
-for (let i = 0; i < 34; i++) {
-  const side = i % 2 === 0 ? -1 : 1;
-  ridge(side * (25 + Math.random() * 55), -35 + Math.random() * 105, 12 + Math.random() * 20, 20 + Math.random() * 42, 15 + Math.random() * 24, i % 3 === 0 ? 0x656c58 : 0x77745f);
+for (let i = 0; i < 62; i++) {
+  const angle = Math.random() * Math.PI * 2;
+  const radius = 72 + Math.random() * 112;
+  ridge(Math.cos(angle) * radius, Math.sin(angle) * radius - 24, 18 + Math.random() * 34, 24 + Math.random() * 58, 20 + Math.random() * 38, i % 3 === 0 ? 0x656c58 : 0x77745f);
 }
 for (let i = 0; i < 48; i++) {
   const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5 + Math.random() * 1.2, 0), new THREE.MeshStandardMaterial({ color: 0x777263, flatShading: true }));
@@ -149,6 +164,49 @@ addStoneOutpost(-13, -39, 0.22);
 addSandbagLine(-5.5, -14, 7, 0.12);
 addSandbagLine(5.2, -31, 6, -0.18);
 addWatchPost(15, -42);
+
+// A prominent Algerian flag anchors the rally point and is built locally (no external asset required).
+const flagCanvas = document.createElement('canvas');
+flagCanvas.width = 512; flagCanvas.height = 300;
+const flagCtx = flagCanvas.getContext('2d');
+if (!flagCtx) throw new Error('Flag canvas is unavailable');
+flagCtx.fillStyle = '#ffffff'; flagCtx.fillRect(0, 0, 512, 300);
+flagCtx.fillStyle = '#006233'; flagCtx.fillRect(0, 0, 256, 300);
+flagCtx.fillStyle = '#d21034'; flagCtx.beginPath(); flagCtx.arc(256, 150, 72, 0, Math.PI * 2); flagCtx.fill();
+flagCtx.fillStyle = '#ffffff'; flagCtx.beginPath(); flagCtx.arc(282, 128, 61, 0, Math.PI * 2); flagCtx.fill();
+const starPoints: number[][] = [];
+for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5; const r = i % 2 === 0 ? 34 : 14; starPoints.push([342 + Math.cos(a) * r, 150 + Math.sin(a) * r]); }
+flagCtx.fillStyle = '#d21034'; flagCtx.beginPath(); starPoints.forEach(([x,y],i) => i ? flagCtx.lineTo(x,y) : flagCtx.moveTo(x,y)); flagCtx.closePath(); flagCtx.fill();
+const flagTexture = new THREE.CanvasTexture(flagCanvas); flagTexture.colorSpace = THREE.SRGBColorSpace;
+const flagGroup = new THREE.Group();
+const flagPole = new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.16,12,10),new THREE.MeshStandardMaterial({color:0x777b78,metalness:0.55,roughness:0.45}));
+flagPole.position.y=6; flagPole.castShadow=true; flagGroup.add(flagPole);
+const poleTop = new THREE.Mesh(new THREE.SphereGeometry(0.2,10,8),new THREE.MeshStandardMaterial({color:0xc8a65f,metalness:0.6,roughness:0.3}));
+poleTop.position.y=12.1; flagGroup.add(poleTop);
+const flagGeometry = new THREE.PlaneGeometry(5.4,3.15,20,12);
+flagGeometry.translate(2.7,10.35,0);
+const flag = new THREE.Mesh(flagGeometry,new THREE.MeshStandardMaterial({map:flagTexture,side:THREE.DoubleSide,roughness:0.8}));
+flag.castShadow=true; flagGroup.add(flag);
+flagGroup.position.set(-8,0,-37); scene.add(flagGroup);
+const flagRestPositions = flagGeometry.attributes.position.array.slice();
+
+type CoverZone = { position: THREE.Vector3; radius: number };
+const coverZones: CoverZone[] = [];
+function addConcealmentBush(x:number,z:number):void {
+  const bush = new THREE.Group();
+  const green = new THREE.MeshStandardMaterial({color:0x344b31,roughness:1,flatShading:true});
+  for(let i=0;i<7;i++){
+    const leaf = new THREE.Mesh(new THREE.DodecahedronGeometry(0.65 + Math.random()*0.5,0),green);
+    leaf.position.set((Math.random()-0.5)*2.3,0.45+Math.random()*0.8,(Math.random()-0.5)*1.8);
+    leaf.scale.y=0.75+Math.random()*0.45; leaf.castShadow=true; bush.add(leaf);
+  }
+  bush.position.set(x,0,z); scene.add(bush);
+  coverZones.push({position:new THREE.Vector3(x,0,z),radius:4.8});
+}
+for(const [x,z] of [[-5,-18],[9,-11],[-15,-31],[18,-39],[25,-61],[-32,-65],[40,10],[-40,15],[53,-22],[-57,-5],[12,34],[-18,48]] as number[][]) addConcealmentBush(x,z);
+function isPlayerInCover():boolean {
+  return coverZones.some(zone => Math.hypot(player.position.x-zone.position.x,player.position.z-zone.position.z) < zone.radius);
+}
 
 function makePerson(color: number, scale = 1): THREE.Group {
   // Improved temporary historical-inspired silhouettes. These remain procedural placeholders,
@@ -415,6 +473,8 @@ let yaw = 0;
 let pitch = -0.10;
 let cameraDistance = 7.2;
 let aiming = false;
+let crouching = false;
+let playerHidden = false;
 let verticalVelocity = 0;
 let onGround = true;
 const clock = new THREE.Clock();
@@ -482,7 +542,7 @@ function beginGame(): void {
   if (gameOver) {
     health = 100; stamina = 100; damageCooldown = 0; ammo = 12; reserveAmmo = 48; missionDone = false; suppliesCollected = false; goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false; gameOver = false;
     supplyCache.visible = true;
-    player.position.set(0, 0, 9); player.rotation.set(0, 0, 0);
+    player.position.set(0, 0, 9); player.rotation.set(0, 0, 0); player.scale.set(1,1,1); crouching = false; playerHidden = false; $('#hide-button').classList.remove('active'); $('#hide-button').textContent = 'اختباء';
     yaw = 0; pitch = -0.10; cameraDistance = 7.2;
     verticalVelocity = 0; onGround = true; resetEnemies(); updateHud();
 document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
@@ -508,7 +568,7 @@ document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
   $('#victory-screen').classList.remove('visible');
   startScreen.style.display = 'none';
   if (window.matchMedia('(pointer:fine)').matches) renderer.domElement.requestPointerLock();
-  notify('تقدم بحذر: ستواجه دوريات مسلحة. استخدم الحواجز الصخرية وأمّن الإمدادات.');
+  notify('🇩🇿 العلم الجزائري يحدد نقطة التجمع. ابحث عن الشجيرات والصخور واضغط C للاختباء.');
 }
 $('#outfit-algerian').addEventListener('click', () => setPlayerOutfit('algerian'));
 $('#outfit-french').addEventListener('click', () => setPlayerOutfit('french'));
@@ -710,6 +770,21 @@ fireButton.addEventListener('pointerup', stopFiring);
 fireButton.addEventListener('pointercancel', stopFiring);
 fireButton.addEventListener('lostpointercapture', stopFiring);
 window.addEventListener('blur', stopFiring);
+function toggleHide(): void {
+  if (!started || paused || gameOver) return;
+  if (!crouching) {
+    if (!isPlayerInCover()) { notify('اقترب من الشجيرات أو الغطاء الصخري أولاً حتى تختبئ.'); return; }
+    crouching = true; playerHidden = true; player.scale.y = 0.72;
+    $('#hide-button').classList.add('active'); $('#hide-button').textContent = 'خروج';
+    notify('أنت مختبئ داخل الغطاء؛ الدوريات لن ترصدك ما دمت في منطقة التمويه.');
+  } else {
+    crouching = false; playerHidden = false; player.scale.y = 1;
+    $('#hide-button').classList.remove('active'); $('#hide-button').textContent = 'اختباء';
+    notify('خرجت من وضع الاختباء.');
+  }
+}
+$('#hide-button').addEventListener('click', toggleHide);
+document.addEventListener('keydown', (event) => { if (event.code === 'KeyC' && !event.repeat) toggleHide(); });
 $('#aim-button').addEventListener('click', () => {
   if (!started || paused || gameOver) return;
   aiming = !aiming;
@@ -791,6 +866,12 @@ function animate(): void {
   if (radarElapsed >= 0.12) { drawRadar(); radarElapsed = 0; }
   marker.position.y = Math.sin(time * 2) * 0.12;
   ring.rotation.z += delta * 0.65;
+  const flagPositions = flagGeometry.attributes.position;
+  for(let i=0;i<flagPositions.count;i++){
+    const x=flagRestPositions[i*3], y=flagRestPositions[i*3+1];
+    flagPositions.setZ(i,flagRestPositions[i*3+2] + Math.sin(time*2.1 + x*1.35 + y*0.18) * 0.22 * (x/5.4));
+  }
+  flagPositions.needsUpdate=true; flagGeometry.computeVertexNormals();
 
   if (started && !gameOver && !paused) {
     const inputX = (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0) + touchX;
@@ -801,7 +882,7 @@ function animate(): void {
     if (direction.lengthSq() > 0.01) {
       direction.normalize();
       const sprinting = (keys.has('ShiftLeft') || keys.has('ShiftRight') || mobileSprint) && stamina > 1;
-      const speed = sprinting ? 8.2 : 5.2;
+      const speed = crouching ? 2.35 : sprinting ? 8.2 : 5.2;
       stamina = THREE.MathUtils.clamp(stamina + (sprinting ? -30 : 19) * delta, 0, 100);
       player.position.addScaledVector(direction, speed * delta);
       setCharacterAnimation(player, sprinting ? 'Run' : 'Walk');
@@ -825,8 +906,10 @@ function animate(): void {
     verticalVelocity -= 17 * delta;
     player.position.y += verticalVelocity * delta;
     if (player.position.y <= 0) { player.position.y = 0; verticalVelocity = 0; onGround = true; }
-    player.position.x = THREE.MathUtils.clamp(player.position.x, -72, 72);
-    player.position.z = THREE.MathUtils.clamp(player.position.z, -75, 65);
+    player.position.x = THREE.MathUtils.clamp(player.position.x, -195, 195);
+    player.position.z = THREE.MathUtils.clamp(player.position.z, -195, 175);
+    if (crouching && !isPlayerInCover()) { crouching = false; playerHidden = false; player.scale.y = 1; $('#hide-button').classList.remove('active'); $('#hide-button').textContent = 'اختباء'; notify('خرجت من منطقة الغطاء؛ لم تعد مختبئاً.'); }
+    else playerHidden = crouching && isPlayerInCover();
 
     const distanceToGoal = player.position.distanceTo(marker.position);
     if (!missionDone && distanceToGoal < 3.2) {
@@ -857,7 +940,7 @@ function animate(): void {
     enemies.forEach((enemy, index) => {
       if (enemy.parent === null) return;
       const distance = enemy.position.distanceTo(player.position);
-      if (distance < 22 && distance > 3.0) {
+      if (!playerHidden && distance < 22 && distance > 3.0) {
         const toward = player.position.clone().sub(enemy.position).setY(0).normalize();
         enemy.position.addScaledVector(toward, delta * 0.82);
         setCharacterAnimation(enemy, 'Walk');
@@ -872,7 +955,7 @@ function animate(): void {
         setCharacterAnimation(enemy, 'Walk');
       }
       enemy.userData.fireCooldown = Math.max(0, (enemy.userData.fireCooldown as number) - delta);
-      if (distance >= 7 && distance < 25 && enemy.userData.fireCooldown <= 0) {
+      if (!playerHidden && distance >= 7 && distance < 25 && enemy.userData.fireCooldown <= 0) {
         enemy.lookAt(player.position.x, enemy.position.y, player.position.z);
         const from = enemy.position.clone().add(new THREE.Vector3(0, 1.35, 0));
         const to = player.position.clone().add(new THREE.Vector3(0, 1.0, 0));
@@ -917,7 +1000,7 @@ function animate(): void {
       (aiming ? 2.35 : 3.25) + pitch * (aiming ? 1.15 : 1.8),
       Math.cos(yaw) * desiredDistance - Math.sin(yaw) * shoulder
     );
-    const cameraTarget = player.position.clone().add(new THREE.Vector3(0, aiming ? 1.52 : 1.38, 0));
+    const cameraTarget = player.position.clone().add(new THREE.Vector3(0, crouching ? 0.92 : aiming ? 1.52 : 1.38, 0));
     const aimForward = new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw));
     const lookTarget = cameraTarget.clone().addScaledVector(aimForward, aiming ? 16 : 8);
     camera.position.lerp(cameraTarget.clone().add(cameraOffset), 1 - Math.pow(0.00008, delta));
