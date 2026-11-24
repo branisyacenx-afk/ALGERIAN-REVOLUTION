@@ -7,10 +7,13 @@ if (!root) throw new Error('Game root not found');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9ba99a);
 scene.fog = new THREE.Fog(0x9ba99a, 34, 150);
-const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 250);
+const isPortraitTouch = () => window.matchMedia('(pointer: coarse) and (orientation: portrait)').matches;
+const viewWidth = () => isPortraitTouch() ? window.innerHeight : window.innerWidth;
+const viewHeight = () => isPortraitTouch() ? window.innerWidth : window.innerHeight;
+const camera = new THREE.PerspectiveCamera(65, viewWidth() / viewHeight(), 0.1, 250);
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(viewWidth(), viewHeight());
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 root.appendChild(renderer.domElement);
@@ -102,14 +105,14 @@ function makePerson(color: number, scale = 1): THREE.Group {
   const wrap = new THREE.MeshStandardMaterial({ color: color === 0x354c3b ? 0xb9a77e : 0x77715f, roughness: 1 });
 
   const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.58, 5, 10), cloth);
-  torso.position.y = 1.18; torso.castShadow = true; group.add(torso);
+  torso.userData.outfitRole = 'cloth'; torso.position.y = 1.18; torso.castShadow = true; group.add(torso);
   const chest = new THREE.Mesh(new THREE.BoxGeometry(0.61, 0.32, 0.37), cloth);
-  chest.position.set(0, 1.38, 0); chest.castShadow = true; group.add(chest);
+  chest.userData.outfitRole = 'cloth'; chest.position.set(0, 1.38, 0); chest.castShadow = true; group.add(chest);
 
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.225, 14, 12), skin);
   head.position.y = 1.83; head.castShadow = true; group.add(head);
   const headWrap = new THREE.Mesh(new THREE.SphereGeometry(0.245, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.58), wrap);
-  headWrap.position.y = 1.91; headWrap.castShadow = true; group.add(headWrap);
+  headWrap.userData.outfitRole = 'wrap'; headWrap.position.y = 1.91; headWrap.castShadow = true; group.add(headWrap);
   const nose = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.09, 0.09), skin);
   nose.position.set(0, 1.79, -0.215); group.add(nose);
 
@@ -117,12 +120,12 @@ function makePerson(color: number, scale = 1): THREE.Group {
   belt.position.y = 0.91; group.add(belt);
   for (const side of [-1, 1]) {
     const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.135, 0.48, 4, 7), trousers);
-    leg.userData.motionRole = side < 0 ? 'leftLeg' : 'rightLeg';
+    leg.userData.motionRole = side < 0 ? 'leftLeg' : 'rightLeg'; leg.userData.outfitRole = 'trousers';
     leg.position.set(side * 0.17, 0.48, 0); leg.castShadow = true; group.add(leg);
     const boot = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.34), leather);
     boot.position.set(side * 0.17, 0.12, -0.055); boot.castShadow = true; group.add(boot);
     const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.105, 0.48, 4, 7), cloth);
-    arm.userData.motionRole = side < 0 ? 'leftArm' : 'rightArm';
+    arm.userData.motionRole = side < 0 ? 'leftArm' : 'rightArm'; arm.userData.outfitRole = 'cloth';
     arm.position.set(side * 0.43, 1.24, 0); arm.rotation.z = side * -0.12; arm.castShadow = true; group.add(arm);
     const hand = new THREE.Mesh(new THREE.SphereGeometry(0.105, 8, 7), skin);
     hand.position.set(side * 0.45, 0.91, -0.02); group.add(hand);
@@ -138,6 +141,18 @@ function makePerson(color: number, scale = 1): THREE.Group {
 const player = makePerson(0x354c3b, 1);
 player.position.set(0, 0, 9);
 scene.add(player);
+function setPlayerOutfit(kind: 'algerian' | 'french'): void {
+  const palette = kind === 'algerian'
+    ? { cloth: 0x526348, trousers: 0x3e4939, wrap: 0xd0bd91 }
+    : { cloth: 0x34465a, trousers: 0x303a48, wrap: 0x465365 };
+  player.traverse((part) => {
+    if (!(part instanceof THREE.Mesh) || !part.userData.outfitRole) return;
+    const role = part.userData.outfitRole as keyof typeof palette;
+    const material = part.material as THREE.MeshStandardMaterial;
+    material.color.setHex(palette[role]);
+  });
+  notify(kind === 'algerian' ? 'تم اختيار الزي الجزائري التاريخي التمثيلي.' : 'تم اختيار الزي العسكري الفرنسي التمثيلي.');
+}
 const weapon = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.9), new THREE.MeshStandardMaterial({ color: 0x292b28, metalness: 0.45, roughness: 0.65 }));
 weapon.position.set(0.38, 1.18, -0.48);
 player.add(weapon);
@@ -275,6 +290,7 @@ function beginGame(): void {
     player.position.set(0, 0, 9); player.rotation.set(0, 0, 0);
     yaw = 0; pitch = -0.12;
     verticalVelocity = 0; onGround = true; resetEnemies(); updateHud();
+document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
   }
   started = true;
   paused = false;
@@ -298,6 +314,8 @@ function beginGame(): void {
   if (window.matchMedia('(pointer:fine)').matches) renderer.domElement.requestPointerLock();
   notify('تحرّك نحو العلامة الذهبية في الممر.');
 }
+$('#outfit-algerian').addEventListener('click', () => setPlayerOutfit('algerian'));
+$('#outfit-french').addEventListener('click', () => setPlayerOutfit('french'));
 $('#start-button').addEventListener('click', beginGame);
 
 function pauseGame(): void {
@@ -463,17 +481,24 @@ const stick = $('#stick');
 let touchX = 0;
 let touchY = 0;
 let joystickPointer: number | null = null;
-joystick.addEventListener('pointerdown', (event) => { joystickPointer = event.pointerId; joystick.setPointerCapture(event.pointerId); });
-joystick.addEventListener('pointermove', (event) => {
-  if (joystickPointer !== event.pointerId) return;
+function updateJoystick(event: PointerEvent): void {
   const rect = joystick.getBoundingClientRect();
   const dx = event.clientX - (rect.left + rect.width / 2);
   const dy = event.clientY - (rect.top + rect.height / 2);
+  const max = Math.min(rect.width, rect.height) * 0.31;
   const length = Math.max(1, Math.hypot(dx, dy));
-  const scale = Math.min(34 / length, 1);
-  touchX = (dx * scale) / 34;
-  touchY = (dy * scale) / 34;
-  stick.style.transform = `translate(${touchX * 34}px,${touchY * 34}px)`;
+  const scale = Math.min(max / length, 1);
+  touchX = (dx * scale) / max;
+  touchY = (dy * scale) / max;
+  stick.style.transform = `translate(${touchX * max}px,${touchY * max}px)`;
+}
+joystick.addEventListener('pointerdown', (event) => {
+  event.preventDefault(); joystickPointer = event.pointerId;
+  joystick.setPointerCapture(event.pointerId); updateJoystick(event);
+});
+joystick.addEventListener('pointermove', (event) => {
+  if (joystickPointer !== event.pointerId) return;
+  updateJoystick(event);
 });
 const releaseJoystick = () => { joystickPointer = null; touchX = 0; touchY = 0; stick.style.transform = 'translate(0,0)'; };
 joystick.addEventListener('pointerup', releaseJoystick);
@@ -617,9 +642,10 @@ function animate(): void {
 animate();
 
 window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
+  camera.aspect = viewWidth() / viewHeight();
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(viewWidth(), viewHeight());
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
 });
 updateHud();

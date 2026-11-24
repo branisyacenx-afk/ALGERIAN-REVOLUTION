@@ -68,3 +68,35 @@ canvas{touch-action:none} .mobile-actions #reload-button{font-size:27px;backgrou
   body.needs-landscape:before{content:"يرجى تدوير الهاتف إلى الوضع الأفقي للعب";position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:30px;text-align:center;background:#101914;color:#f2e6c9;font-size:22px;font-weight:700}
   body.needs-landscape #app{visibility:hidden}
 }
+
+/* Portrait phones are presented as a landscape game canvas immediately on page load. */
+body.portrait-landscape-sim #app{
+  position:fixed;top:0;left:0;
+  width:100dvh;height:100vw;
+  transform-origin:top left;
+  transform:rotate(90deg) translateY(-100%);
+}
+body.portrait-landscape-sim #game-root,
+body.portrait-landscape-sim #hud{width:100%;height:100%}
+#mobile-controls{direction:ltr}
+#joystick{touch-action:none;user-select:none;-webkit-user-select:none}
+#look-area{touch-action:none}
+.identity-strip{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin:12px 0;padding:10px;border:1px solid #c6a66a55;border-radius:10px;background:#ffffff08;font-size:11px}
+.identity-strip .flag{font-size:23px}
+.outfit-picker{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;margin:10px 0;padding:10px;border:1px solid #c6a66a55;border-radius:10px}
+.outfit-picker strong{width:100%;color:#e6c98e;font-size:13px}
+.outfit-picker button{padding:9px 11px;border:1px solid #d6b77a88;border-radius:8px;background:#314438;color:#f5f0df;font:inherit;font-size:11px}
+.outfit-picker button:active{background:#c6a66a;color:#172018}
+.outfit-picker small{width:100%;font-size:9px;color:#c7bda8}
+@media(max-width:900px) and (pointer:coarse){
+ body.portrait-landscape-sim .start-card{width:min(76vw,650px);max-height:88dvh;padding:12px 18px}
+ body.portrait-landscape-sim .start-card h1{font-size:clamp(25px,5vw,40px);margin:0}
+ body.portrait-landscape-sim .start-card p{font-size:11px;margin:4px}
+ body.portrait-landscape-sim .howto{margin:6px 0;padding:7px}
+ body.portrait-landscape-sim .howto ol{font-size:10px;line-height:1.5;margin:3px 0}
+ body.portrait-landscape-sim .howto small{font-size:9px}
+ body.portrait-landscape-sim .identity-strip,body.portrait-landscape-sim .outfit-picker{margin:5px 0;padding:6px;gap:5px}
+ body.portrait-landscape-sim .start-card button{margin:5px 0;padding:8px 18px}
+ #mobile-controls{bottom:12px;left:14px;right:14px}
+ #look-area{z-index:3}
+}
