@@ -859,7 +859,6 @@ function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
 let cinematicTimer: number | null = null;
 function launchMissionBriefing(): void {
   if (cinematicTimer !== null) window.clearTimeout(cinematicTimer);
-  configureCampaignStage();
   const chapter = campaignChapter(campaignStage);
   const sector = campaignSector(campaignStage);
   const plan = campaignStage % 3 === 1
@@ -867,6 +866,9 @@ function launchMissionBriefing(): void {
     : campaignStage % 3 === 2
       ? 'تحرك بين نقاط الاحتماء وراقب محاور تقدم العدو.'
       : 'احمِ فريقك، أمّن الطريق، ثم توجه إلى نقطة التجمع.';
+  // Start gameplay immediately on the user's tap. The cinematic is an overlay,
+  // never a gate that can leave the player stuck on the briefing screen.
+  beginGame();
   $('#cinema-counter').textContent = `OPÉRATION ${String(campaignStage).padStart(2,'0')} / 100`;
   $('#cinema-year').textContent = chapter.year;
   $('#cinema-title').textContent = chapter.title;
@@ -876,14 +878,17 @@ function launchMissionBriefing(): void {
   $('#cinema-plan').textContent = plan;
   $('#mission-cinematic').classList.add('visible');
   $('#mission-cinematic').setAttribute('aria-hidden','false');
-  startScreen.style.display = 'none';
-  document.body.classList.remove('game-started');
-  cinematicTimer = window.setTimeout(() => beginGame(), 5200);
+  cinematicTimer = window.setTimeout(() => {
+    $('#mission-cinematic').classList.remove('visible');
+    $('#mission-cinematic').setAttribute('aria-hidden','true');
+    cinematicTimer = null;
+  }, 4200);
 }
 function closeMissionBriefing(): void {
   if (cinematicTimer !== null) window.clearTimeout(cinematicTimer);
   cinematicTimer = null;
-  beginGame();
+  $('#mission-cinematic').classList.remove('visible');
+  $('#mission-cinematic').setAttribute('aria-hidden','true');
 }
 function beginGame(): void {
   if (cinematicTimer !== null) window.clearTimeout(cinematicTimer);
@@ -921,7 +926,15 @@ function beginGame(): void {
 }
 $('#outfit-algerian').addEventListener('click', () => setPlayerOutfit('algerian'));
 $('#outfit-french').addEventListener('click', () => setPlayerOutfit('french'));
-$('#start-button').addEventListener('click', launchMissionBriefing);
+$('#start-button').addEventListener('click', () => {
+  try {
+    launchMissionBriefing();
+  } catch (error) {
+    console.error('Mission start failed:', error);
+    closeMissionBriefing();
+    try { beginGame(); } catch (fallbackError) { console.error('Direct game start failed:', fallbackError); notify('تعذر بدء المهمة. أعد تحميل الصفحة وحاول مجدداً.'); }
+  }
+});
 $('#cinematic-enter').addEventListener('click', closeMissionBriefing);
 
 function pauseGame(): void {
