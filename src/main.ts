@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import './style.css';
 
 const root = document.querySelector<HTMLDivElement>('#game-root');
@@ -205,10 +207,12 @@ function setPlayerOutfit(kind: 'algerian' | 'french'): void {
     const material = part.material as THREE.MeshStandardMaterial;
     material.color.setHex(palette[role]);
   });
-  notify(kind === 'algerian' ? 'تم اختيار الزي الجزائري التاريخي التمثيلي.' : 'تم اختيار الزي العسكري الفرنسي التمثيلي.');
+  if (player.userData.characterModel) tintCharacter(player, kind === 'algerian' ? 0x9aa184 : 0x7f8a9c);
+  notify(kind === 'algerian' ? 'تم اختيار الزي الجزائري التمثيلي.' : 'تم اختيار الزي العسكري الفرنسي التمثيلي.');
 }
 const weapon = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.9), new THREE.MeshStandardMaterial({ color: 0x292b28, metalness: 0.45, roughness: 0.65 }));
 weapon.position.set(0.38, 1.18, -0.48);
+weapon.userData.keepOnCharacter = true;
 player.add(weapon);
 
 const enemies: THREE.Group[] = [];
@@ -223,6 +227,142 @@ for (let i = 0; i < 6; i++) {
   scene.add(enemy);
   enemies.push(enemy);
 }
+
+
+/*
+ * Character upgrade: load a rigged, textured humanoid soldier with Idle/Walk/Run
+ * clips. Each actor gets an independent skeleton and AnimationMixer.
+ * The procedural body remains only as an offline fallback during loading.
+ */
+const characterMixers: THREE.AnimationMixer[] = [];
+let soldierTemplate: THREE.Group | null = null;
+const soldierLoader = new GLTFLoader();
+
+function setCharacterAnimation(actor: THREE.Group, name: 'Idle' | 'Walk' | 'Run'): void {
+  const actions = actor.userData.characterActions as Record<string, THREE.AnimationAction> | undefined;
+  if (!actions) return;
+  const next = actions[name] || actions.Idle;
+  const current = actor.userData.currentCharacterAction as THREE.AnimationAction | undefined;
+  if (!next || current === next) return;
+  next.reset().fadeIn(0.22).play();
+  current?.fadeOut(0.22);
+  actor.userData.currentCharacterAction = next;
+}
+
+function tintCharacter(actor: THREE.Group, tint: number): void {
+  actor.traverse((part) => {
+    if (!(part instanceof THREE.Mesh)) return;
+    const materials = Array.isArray(part.material) ? part.material : [part.material];
+    for (const material of materials) {
+      if (material instanceof THREE.MeshStandardMaterial) {
+        material.color.setHex(tint);
+        material.roughness = Math.max(material.roughness, 0.72);
+      }
+    }
+  });
+}
+
+function attachSoldierModel(actor: THREE.Group, tint: number): void {
+  if (!soldierTemplate) return;
+  const oldMixer = actor.userData.characterMixer as THREE.AnimationMixer | undefined;
+  if (oldMixer) {
+    oldMixer.stopAllAction();
+    const oldIndex = characterMixers.indexOf(oldMixer);
+    if (oldIndex >= 0) characterMixers.splice(oldIndex, 1);
+  }
+  for (const child of [...actor.children]) {
+    if (child.userData.keepOnCharacter) {
+      // The external model includes its own rifle; hide the temporary placeholder weapon.
+      child.visible = false;
+      continue;
+    }
+    actor.remove(child);
+  }
+
+  const model = cloneSkeleton(soldierTemplate);
+  const bounds = new THREE.Box3().setFromObject(model);
+  const size = new THREE.Vector3();
+  bounds.getSize(size);
+  const fitScale = size.y > 0.01 ? 1.86 / size.y : 1;
+  model.scale.setScalar(fitScale);
+  model.position.y = -bounds.min.y * fitScale;
+  // Mixamo's sample soldier faces +Z; the game actors face -Z.
+  model.rotation.y = Math.PI;
+  model.traverse((part) => {
+    if (!(part instanceof THREE.Mesh)) return;
+    part.castShadow = true;
+    part.receiveShadow = true;
+    if (part.material) {
+      const mats = Array.isArray(part.material) ? part.material : [part.material];
+      for (const mat of mats) {
+        if (mat instanceof THREE.MeshStandardMaterial) {
+          mat = mat.clone();
+          mat.color.setHex(tint);
+          mat.roughness = Math.max(mat.roughness, 0.72);
+        }
+      }
+    }
+  });
+  // Clone materials per actor so faction colors never leak between soldiers.
+  model.traverse((part) => {
+    if (!(part instanceof THREE.Mesh)) return;
+    if (Array.isArray(part.material)) {
+      part.material = part.material.map((mat) => {
+        const copy = mat.clone();
+        if (copy instanceof THREE.MeshStandardMaterial) {
+          copy.color.setHex(tint);
+          copy.roughness = Math.max(copy.roughness, 0.72);
+        }
+        return copy;
+      });
+    } else {
+      const copy = part.material.clone();
+      if (copy instanceof THREE.MeshStandardMaterial) {
+        copy.color.setHex(tint);
+        copy.roughness = Math.max(copy.roughness, 0.72);
+      }
+      part.material = copy;
+    }
+  });
+  actor.add(model);
+  actor.userData.characterModel = model;
+  const mixer = new THREE.AnimationMixer(model);
+  const actions: Record<string, THREE.AnimationAction> = {};
+  for (const clip of soldierTemplate.userData.animations as THREE.AnimationClip[] || []) {
+    if (['Idle', 'Walk', 'Run'].includes(clip.name)) actions[clip.name] = mixer.clipAction(clip);
+  }
+  actor.userData.characterMixer = mixer;
+  actor.userData.characterActions = actions;
+  characterMixers.push(mixer);
+  setCharacterAnimation(actor, 'Idle');
+}
+
+async function loadSoldierCharacters(): Promise<void> {
+  try {
+    const gltf = await soldierLoader.loadAsync(
+      'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/Soldier.glb'
+    );
+    soldierTemplate = gltf.scene;
+    soldierTemplate.userData.animations = gltf.animations;
+    soldierTemplate.traverse((part) => {
+      if (part instanceof THREE.Mesh) {
+        part.castShadow = true;
+        part.receiveShadow = true;
+      }
+    });
+    attachSoldierModel(player, 0x9aa184);
+    for (const enemy of enemies) attachSoldierModel(enemy, 0x858b7b);
+    enemyMeshes.length = 0;
+    enemies.forEach((enemy) => enemy.traverse((part) => {
+      if (part instanceof THREE.Mesh) enemyMeshes.push(part);
+    }));
+    notify('اكتمل تحميل مجسمات الجنود ثلاثية الأبعاد وحركاتهم.');
+  } catch (error) {
+    console.warn('Soldier model could not be loaded; keeping the offline fallback.', error);
+    notify('تعذر تحميل نموذج الجندي من الإنترنت؛ تحقق من الاتصال لإظهار المجسمات البشرية.');
+  }
+}
+void loadSoldierCharacters();
 
 const marker = new THREE.Group();
 const ring = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.09, 8, 36), new THREE.MeshBasicMaterial({ color: 0xe9c36f }));
@@ -327,11 +467,16 @@ function updateHud(): void {
 }
 
 function resetEnemies(): void {
-  for (const enemy of enemies) scene.remove(enemy);
+  for (const enemy of enemies) {
+    const mixer = enemy.userData.characterMixer as THREE.AnimationMixer | undefined;
+    if (mixer) { mixer.stopAllAction(); const index = characterMixers.indexOf(mixer); if (index >= 0) characterMixers.splice(index, 1); }
+    scene.remove(enemy);
+  }
   enemies.length = 0;
   enemyMeshes.length = 0;
   for (let i = 0; i < 4; i++) {
     const enemy = makePerson(0x55594e, 0.95);
+    if (soldierTemplate) attachSoldierModel(enemy, 0x858b7b);
     enemy.position.set((i - 1.5) * 5.5, 0, -15 - (i % 2) * 5);
     enemy.userData.health = 2;
     enemy.userData.fireCooldown = 1.2 + i * 0.35;
@@ -644,6 +789,7 @@ function animate(): void {
   requestAnimationFrame(animate);
   const delta = Math.min(clock.getDelta(), 0.04);
   const time = clock.elapsedTime;
+  for (const mixer of characterMixers) mixer.update(delta);
   damageCooldown = Math.max(0, damageCooldown - delta);
   radarElapsed += delta;
   if (radarElapsed >= 0.12) { drawRadar(); radarElapsed = 0; }
@@ -662,6 +808,7 @@ function animate(): void {
       const speed = sprinting ? 8.2 : 5.2;
       stamina = THREE.MathUtils.clamp(stamina + (sprinting ? -30 : 19) * delta, 0, 100);
       player.position.addScaledVector(direction, speed * delta);
+      setCharacterAnimation(player, sprinting ? 'Run' : 'Walk');
       const stride = Math.sin(time * (sprinting ? 13 : 8)) * (sprinting ? 0.62 : 0.38);
       player.traverse((part) => {
         if (!(part instanceof THREE.Mesh)) return;
@@ -672,6 +819,7 @@ function animate(): void {
       player.rotation.y = Math.atan2(-direction.x, -direction.z);
     }
     if (direction.lengthSq() <= 0.01) {
+      setCharacterAnimation(player, 'Idle');
       stamina = THREE.MathUtils.clamp(stamina + 24 * delta, 0, 100);
       player.traverse((part) => { if (part instanceof THREE.Mesh && part.userData.motionRole) part.rotation.x *= Math.max(0, 1 - delta * 8); });
     }
@@ -716,6 +864,7 @@ function animate(): void {
       if (distance < 22 && distance > 3.0) {
         const toward = player.position.clone().sub(enemy.position).setY(0).normalize();
         enemy.position.addScaledVector(toward, delta * 0.82);
+        setCharacterAnimation(enemy, 'Walk');
         enemy.lookAt(player.position.x, enemy.position.y, player.position.z);
       } else if (distance >= 22) {
         const phase = time * 0.42 + (enemy.userData.patrolPhase as number);
@@ -724,6 +873,7 @@ function animate(): void {
         enemy.position.x = THREE.MathUtils.damp(enemy.position.x, patrolX, 1.5, delta);
         enemy.position.z = THREE.MathUtils.damp(enemy.position.z, patrolZ, 1.5, delta);
         enemy.rotation.y = Math.atan2(-(enemy.position.x - (enemy.userData.patrolX as number)), -(enemy.position.z - (enemy.userData.patrolZ as number)));
+        setCharacterAnimation(enemy, 'Walk');
       }
       enemy.userData.fireCooldown = Math.max(0, (enemy.userData.fireCooldown as number) - delta);
       if (distance >= 7 && distance < 25 && enemy.userData.fireCooldown <= 0) {
