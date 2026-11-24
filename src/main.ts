@@ -702,8 +702,8 @@ document.addEventListener('pointermove', (event) => {
   // into the landscape game axes so horizontal swipes always turn the view naturally.
   const dragX = isPortraitTouch() ? dy : dx;
   const dragY = isPortraitTouch() ? -dx : dy;
-  yaw += dragX * (aiming ? 0.0048 : 0.0065);
-  pitch = THREE.MathUtils.clamp(pitch + dragY * (aiming ? 0.0038 : 0.0052), -0.82, 0.48);
+  yaw -= dragX * (aiming ? 0.0052 : 0.0072);
+  pitch = THREE.MathUtils.clamp(pitch + dragY * (aiming ? 0.0038 : 0.0050), -0.72, 0.38);
 }, { passive: false });
 const releaseLook = (event: PointerEvent) => {
   if (lookPointer === event.pointerId) lookPointer = null;
@@ -1089,12 +1089,12 @@ function animate(): void {
     const desiredDistance = aiming ? Math.min(cameraDistance, 4.8) : cameraDistance;
     camera.fov = THREE.MathUtils.lerp(camera.fov, aiming ? 58 : 76, 1 - Math.exp(-delta * 9));
     camera.updateProjectionMatrix();
-    const shoulder = aiming ? 0.72 : 0.38;
+    const shoulder = aiming ? 0.88 : 0.58;
     const viewSide = cameraMode === 'front' ? -1 : 1;
     const cameraOffset = new THREE.Vector3(
-      Math.sin(yaw) * desiredDistance * viewSide + Math.cos(yaw) * shoulder,
-      (aiming ? 1.85 : 2.35) + pitch * (aiming ? 1.1 : 1.5),
-      Math.cos(yaw) * desiredDistance * viewSide - Math.sin(yaw) * shoulder
+      -Math.sin(yaw) * desiredDistance * viewSide + Math.cos(yaw) * shoulder,
+      (aiming ? 1.72 : 2.05) + pitch * (aiming ? 1.1 : 1.5),
+      Math.cos(yaw) * desiredDistance * viewSide + Math.sin(yaw) * shoulder
     );
     const cameraTarget = player.position.clone().add(new THREE.Vector3(0, crouching ? 0.92 : aiming ? 1.52 : 1.34, 0));
     const aimForward = new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw));
