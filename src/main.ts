@@ -92,25 +92,47 @@ for (let i = 0; i < 48; i++) {
 }
 
 function makePerson(color: number, scale = 1): THREE.Group {
+  // Improved temporary historical-inspired silhouettes. These remain procedural placeholders,
+  // not scans or representations of named historical people.
   const group = new THREE.Group();
-  const cloth = new THREE.MeshStandardMaterial({ color, roughness: 0.95 });
-  const skin = new THREE.MeshStandardMaterial({ color: 0x9a704f });
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.72, 4, 8), cloth);
-  body.position.y = 1.05;
-  body.castShadow = true;
-  group.add(body);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 10), skin);
-  head.position.y = 1.72;
-  head.castShadow = true;
-  group.add(head);
-  const legs = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.62, 0.34), cloth);
-  legs.position.y = 0.38;
-  legs.castShadow = true;
-  group.add(legs);
+  const cloth = new THREE.MeshStandardMaterial({ color, roughness: 0.96 });
+  const trousers = new THREE.MeshStandardMaterial({ color: color === 0x354c3b ? 0x4b5140 : 0x4b4a40, roughness: 1 });
+  const leather = new THREE.MeshStandardMaterial({ color: 0x493b2b, roughness: 0.9 });
+  const skin = new THREE.MeshStandardMaterial({ color: 0x9a704f, roughness: 0.95 });
+  const wrap = new THREE.MeshStandardMaterial({ color: color === 0x354c3b ? 0xb9a77e : 0x77715f, roughness: 1 });
+
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.58, 5, 10), cloth);
+  torso.position.y = 1.18; torso.castShadow = true; group.add(torso);
+  const chest = new THREE.Mesh(new THREE.BoxGeometry(0.61, 0.32, 0.37), cloth);
+  chest.position.set(0, 1.38, 0); chest.castShadow = true; group.add(chest);
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.225, 14, 12), skin);
+  head.position.y = 1.83; head.castShadow = true; group.add(head);
+  const headWrap = new THREE.Mesh(new THREE.SphereGeometry(0.245, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.58), wrap);
+  headWrap.position.y = 1.91; headWrap.castShadow = true; group.add(headWrap);
+  const nose = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.09, 0.09), skin);
+  nose.position.set(0, 1.79, -0.215); group.add(nose);
+
+  const belt = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.09, 0.38), leather);
+  belt.position.y = 0.91; group.add(belt);
+  for (const side of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.135, 0.48, 4, 7), trousers);
+    leg.position.set(side * 0.17, 0.48, 0); leg.castShadow = true; group.add(leg);
+    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.34), leather);
+    boot.position.set(side * 0.17, 0.12, -0.055); boot.castShadow = true; group.add(boot);
+    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.105, 0.48, 4, 7), cloth);
+    arm.position.set(side * 0.43, 1.24, 0); arm.rotation.z = side * -0.12; arm.castShadow = true; group.add(arm);
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.105, 8, 7), skin);
+    hand.position.set(side * 0.45, 0.91, -0.02); group.add(hand);
+  }
+  const pack = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.55, 0.2), leather);
+  pack.position.set(0, 1.28, 0.29); pack.castShadow = true; group.add(pack);
+  const strap = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.7, 0.08), wrap);
+  strap.position.set(-0.22, 1.22, -0.015); strap.rotation.z = -0.2; group.add(strap);
+
   group.scale.setScalar(scale);
   return group;
 }
-
 const player = makePerson(0x354c3b, 1);
 player.position.set(0, 0, 9);
 scene.add(player);
