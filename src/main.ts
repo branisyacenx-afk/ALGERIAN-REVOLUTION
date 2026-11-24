@@ -374,6 +374,19 @@ function makePerson(color: number, scale = 1): THREE.Group {
 const player = makePerson(0x354c3b, 1);
 player.position.set(0, 0, 9);
 scene.add(player);
+const allies: THREE.Group[] = [];
+function addAlgerianBackInsignia(actor: THREE.Group): void {
+  const patch = new THREE.Mesh(new THREE.PlaneGeometry(0.34,0.22), new THREE.MeshStandardMaterial({map:flagTexture,side:THREE.DoubleSide,roughness:0.9}));
+  patch.position.set(0,1.38,0.405); patch.castShadow=true; patch.userData.keepVisibleOnCharacter=true;
+  actor.add(patch);
+}
+for (let i=0;i<3;i++) {
+  const ally=makePerson(0x354c3b,0.94);
+  addAlgerianBackInsignia(ally);
+  const vest=new THREE.Mesh(new THREE.BoxGeometry(0.66,0.58,0.4),new THREE.MeshStandardMaterial({color:0x4b5a3c,roughness:0.95}));
+  vest.position.set(0,1.24,-0.01); vest.castShadow=true; vest.userData.keepVisibleOnCharacter=true; ally.add(vest);
+  scene.add(ally); allies.push(ally);
+}
 
 // Distinct uniform equipment overlays. These remain visible over either the procedural
 // character or the animated rigged soldier model.
@@ -567,6 +580,7 @@ async function loadSoldierCharacters(): Promise<void> {
       }
     });
     attachSoldierModel(player, 0x9aa184);
+    allies.forEach((ally) => attachSoldierModel(ally, 0x687957));
     const factionTints = [0x858b7b, 0x777f70, 0x9a927c, 0x6f796d, 0x8d8877, 0x727a80];
     for (const [index, enemy] of enemies.entries()) {
       attachSoldierModel(enemy, factionTints[index % factionTints.length]);
@@ -748,6 +762,11 @@ function configureCampaignStage(): void {
   const sector = campaignSector(campaignStage);
   const base = new THREE.Vector3(sector.x,0,sector.z);
   player.position.copy(base).add(new THREE.Vector3(0,0,18));
+  allies.forEach((ally,index) => {
+    const offsets=[new THREE.Vector3(-2.2,0,4),new THREE.Vector3(2.2,0,4),new THREE.Vector3(0,0,6.5)];
+    ally.position.copy(player.position).add(offsets[index]);
+    ally.rotation.y=player.rotation.y;
+  });
   player.rotation.set(0,0,0);
   supplyCache.position.copy(base).add(new THREE.Vector3(-8,0,-17));
   supplyCache.visible = true;
@@ -1192,6 +1211,14 @@ function animate(): void {
       stamina = THREE.MathUtils.clamp(stamina + 24 * delta, 0, 100);
       player.traverse((part) => { if (part instanceof THREE.Mesh && part.userData.motionRole) part.rotation.x *= Math.max(0, 1 - delta * 8); });
     }
+    allies.forEach((ally,index) => {
+      const offsets=[new THREE.Vector3(-2.2,0,4),new THREE.Vector3(2.2,0,4),new THREE.Vector3(0,0,6.5)];
+      const target=offsets[index].applyAxisAngle(new THREE.Vector3(0,1,0),player.rotation.y).add(player.position);
+      const gap=ally.position.distanceTo(target);
+      ally.position.lerp(target,Math.min(1,delta*3.8));
+      ally.rotation.y=player.rotation.y;
+      setCharacterAnimation(ally,gap>1.25?'Run':'Idle');
+    });
     $('#stamina-value').textContent = `${Math.round(stamina)}%`;
     $('#stamina-meter').style.width = `${stamina}%`;
     if (keys.has('Space') && onGround) { verticalVelocity = 6.2; onGround = false; }
