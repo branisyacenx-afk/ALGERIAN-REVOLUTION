@@ -479,17 +479,17 @@ $('#camera-zoom-out').addEventListener('click', () => { cameraDistance = Math.mi
 window.addEventListener('blur', () => keys.clear());
 
 function getAimedEnemy(): THREE.Group | undefined {
+  // Raycast the visible meshes themselves: no oversized invisible hit boxes.
   raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-  raycaster.far = 65;
+  raycaster.near = 0.1;
+  raycaster.far = 90;
   let best: THREE.Group | undefined;
   let bestDistance = Infinity;
   for (const enemy of enemies) {
-    const bounds = new THREE.Box3().setFromObject(enemy).expandByScalar(0.5);
-    const point = new THREE.Vector3();
-    if (raycaster.ray.intersectBox(bounds, point)) {
-      const distance = camera.position.distanceTo(point);
-      if (distance < bestDistance) { best = enemy; bestDistance = distance; }
-    }
+    const meshes: THREE.Object3D[] = [];
+    enemy.traverse((part) => { if (part instanceof THREE.Mesh) meshes.push(part); });
+    const hit = raycaster.intersectObjects(meshes, false)[0];
+    if (hit && hit.distance < bestDistance) { best = enemy; bestDistance = hit.distance; }
   }
   return best;
 }
@@ -753,13 +753,21 @@ function animate(): void {
       enemy.rotation.y += Math.sin(time + index) * delta * 0.03;
     });
 
-    const desiredDistance = aiming ? 4.1 : cameraDistance;
-    camera.fov = THREE.MathUtils.lerp(camera.fov, aiming ? 54 : 76, 1 - Math.exp(-delta * 9));
+    // Shoulder camera framing keeps the soldier left of the screen reticle.
+    const desiredDistance = aiming ? 4.6 : cameraDistance;
+    camera.fov = THREE.MathUtils.lerp(camera.fov, aiming ? 58 : 76, 1 - Math.exp(-delta * 9));
     camera.updateProjectionMatrix();
-    const cameraOffset = new THREE.Vector3(Math.sin(yaw) * desiredDistance, (aiming ? 2.65 : 3.6) + pitch * (aiming ? 1.5 : 2.2), Math.cos(yaw) * desiredDistance);
-    const cameraTarget = player.position.clone().add(new THREE.Vector3(0, 1.35, 0));
+    const shoulder = aiming ? 1.12 : 0.82;
+    const cameraOffset = new THREE.Vector3(
+      Math.sin(yaw) * desiredDistance + Math.cos(yaw) * shoulder,
+      (aiming ? 2.35 : 3.25) + pitch * (aiming ? 1.15 : 1.8),
+      Math.cos(yaw) * desiredDistance - Math.sin(yaw) * shoulder
+    );
+    const cameraTarget = player.position.clone().add(new THREE.Vector3(0, aiming ? 1.52 : 1.38, 0));
+    const aimForward = new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw));
+    const lookTarget = cameraTarget.clone().addScaledVector(aimForward, aiming ? 16 : 8);
     camera.position.lerp(cameraTarget.clone().add(cameraOffset), 1 - Math.pow(0.00008, delta));
-    camera.lookAt(cameraTarget);
+    camera.lookAt(lookTarget);
     const aimed = getAimedEnemy();
     $('#crosshair').classList.toggle('targeting', Boolean(aimed));
   } else if (!started) {

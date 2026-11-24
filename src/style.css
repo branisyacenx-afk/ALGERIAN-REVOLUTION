@@ -258,3 +258,12 @@ body:not(.game-started) #camera-zoom-controls{display:none}
 #aim-button.active{background:#b17a2b!important;box-shadow:0 0 0 4px #e8c46a55,0 0 18px #e8c46a99!important}
 #crosshair.aiming{transform:translate(-50%,-50%) scale(.78)!important}
 #crosshair.aiming i{background:#ffe2a4}
+
+/* Precision third-person shooter reticle. */
+#crosshair{width:30px!important;height:30px!important;transform:translate(-50%,-50%)!important;filter:drop-shadow(0 1px 2px #000)!important}
+#crosshair .reticle-top,#crosshair .reticle-bottom{width:2px!important;height:7px!important}
+#crosshair .reticle-left,#crosshair .reticle-right{height:2px!important;width:7px!important}
+#crosshair .reticle-center{width:3px!important;height:3px!important}
+#crosshair .reticle-hit{inset:-8px!important;font-size:24px!important;line-height:30px!important}
+#crosshair.aiming{transform:translate(-50%,-50%) scale(.9)!important}
+@media(max-width:900px){#crosshair{width:30px!important;height:30px!important}#crosshair .reticle-top,#crosshair .reticle-bottom{height:7px!important;width:2px!important}#crosshair .reticle-left,#crosshair .reticle-right{width:7px!important;height:2px!important}}
