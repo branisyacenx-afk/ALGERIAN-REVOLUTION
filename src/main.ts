@@ -1651,7 +1651,7 @@ function animate(): void {
       grenades.splice(index,1);
     }
   });
-  battleAllies.forEach((ally,i)=>{
+  battleAllies.forEach((ally)=>{
     if(!started||paused||gameOver)return;
     // Squad members stay spread across the local defensive line and engage targets from cover.
     setCharacterAnimation(ally, 'Idle');
