@@ -687,6 +687,8 @@ function playSfx(kind: 'shot'|'reload'|'hit'|'pickup'|'damage'): void {
 }
 const muzzleFlash = new THREE.PointLight(0xffb85c,0,5,2);
 scene.add(muzzleFlash);
+const muzzleFlashMesh = new THREE.Mesh(new THREE.SphereGeometry(0.16,8,6),new THREE.MeshBasicMaterial({color:0xffe09a,transparent:true,opacity:0.95}));
+muzzleFlashMesh.visible = false; scene.add(muzzleFlashMesh);
 let started = false;
 let paused = false;
 let health = 100;
@@ -1240,8 +1242,10 @@ function shoot(): void {
   playSfx('shot');
   camera.updateMatrixWorld();
   muzzleFlash.position.copy(camera.position).addScaledVector(camera.getWorldDirection(new THREE.Vector3()),1.15);
+  muzzleFlashMesh.position.copy(muzzleFlash.position);
+  muzzleFlashMesh.visible = true;
   muzzleFlash.intensity = 3.2;
-  window.setTimeout(() => { muzzleFlash.intensity = 0; },65);
+  window.setTimeout(() => { muzzleFlash.intensity = 0; muzzleFlashMesh.visible = false; },65);
   if (playerHidden) { crouching = false; playerHidden = false; player.scale.y = 1; $('#hide-button').classList.remove('active'); $('#hide-button').innerHTML = '<span>▣</span><small>COUVERT</small>'; notify('Votre tir a révélé votre position. Changez de couverture.'); }
   // Shoot through the screen reticle so camera aim and hit detection agree.
   // The same centered reticle drives aim feedback and hit detection.
@@ -1257,6 +1261,16 @@ function shoot(): void {
   window.setTimeout(() => $('#crosshair').classList.remove('firing'), 110);
   if (target) {
       playSfx('hit');
+      target.traverse((part) => {
+        if (!(part instanceof THREE.Mesh)) return;
+        const materials = Array.isArray(part.material) ? part.material : [part.material];
+        materials.forEach((material) => { if (material instanceof THREE.MeshStandardMaterial) material.emissive.setHex(0x8f1d12); });
+      });
+      window.setTimeout(() => target.traverse((part) => {
+        if (!(part instanceof THREE.Mesh)) return;
+        const materials = Array.isArray(part.material) ? part.material : [part.material];
+        materials.forEach((material) => { if (material instanceof THREE.MeshStandardMaterial) material.emissive.setHex(0x000000); });
+      }),110);
       target.userData.health = Math.max(0, (target.userData.health as number) - 1);
       const healthFill = target.userData.healthFill as THREE.Mesh | undefined;
       if (healthFill) healthFill.scale.x = Math.max(0.02,(target.userData.health as number)/2);
