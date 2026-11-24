@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   build: {
+    // Three.js core is 564 kB minified but only about 143 kB over gzip.
+    // Keep the split vendor bundle while avoiding a misleading size warning.
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks(id) {
