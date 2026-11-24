@@ -171,6 +171,7 @@ let reserveAmmo = 48;
 let missionDone = false;
 let suppliesCollected = false;
 let goalNeedsSuppliesNotified = false;
+let goalNeedsEnemiesNotified = false;
 let gameOver = false;
 let lookPointer: number | null = null;
 let lastTouchX = 0;
@@ -205,8 +206,15 @@ function updateHud(): void {
   $('#health-value').textContent = `${health}%`;
   $('#health-meter').style.width = `${health}%`;
   $('#ammo-value').textContent = `${ammo} / ${reserveAmmo}`;
-  $('#mission-progress').style.width = missionDone ? '100%' : suppliesCollected ? '50%' : '0%';
-  $('#mission-status').textContent = missionDone ? 'اكتمل الهدف الأول — أحسنت!' : suppliesCollected ? 'الهدف: الوصول إلى نقطة التجمع' : 'الهدف: جمع صندوق الإمدادات (E)';
+  const progress = missionDone ? 100 : !suppliesCollected ? 0 : enemies.length > 0 ? 33 : 66;
+  $('#mission-progress').style.width = `${progress}%`;
+  $('#mission-status').textContent = missionDone
+    ? 'اكتملت المهمة — وصلت إلى نقطة التجمع!'
+    : !suppliesCollected
+      ? '1/3: اجمع صندوق الإمدادات (E)'
+      : enemies.length > 0
+        ? `2/3: حيّد التهديدات المتبقية (${enemies.length})`
+        : '3/3: الطريق آمن، توجه إلى نقطة التجمع';
 }
 
 function resetEnemies(): void {
@@ -223,7 +231,7 @@ function resetEnemies(): void {
 }
 function beginGame(): void {
   if (gameOver) {
-    health = 100; ammo = 12; reserveAmmo = 48; missionDone = false; suppliesCollected = false; goalNeedsSuppliesNotified = false; gameOver = false;
+    health = 100; ammo = 12; reserveAmmo = 48; missionDone = false; suppliesCollected = false; goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false; gameOver = false;
     supplyCache.visible = true;
     player.position.set(0, 0, 9); player.rotation.set(0, 0, 0);
     verticalVelocity = 0; onGround = true; resetEnemies(); updateHud();
@@ -371,13 +379,16 @@ function animate(): void {
 
     const distanceToGoal = player.position.distanceTo(marker.position);
     if (!missionDone && distanceToGoal < 3.2) {
-      if (suppliesCollected) {
+      if (!suppliesCollected && !goalNeedsSuppliesNotified) {
+        goalNeedsSuppliesNotified = true;
+        notify('المهمة الأولى: اجمع صندوق الإمدادات قبل التقدم.');
+      } else if (suppliesCollected && enemies.length > 0 && !goalNeedsEnemiesNotified) {
+        goalNeedsEnemiesNotified = true;
+        notify(`لا تزال هناك ${enemies.length} تهديدات. أمّن الطريق أولاً.`);
+      } else if (suppliesCollected && enemies.length === 0) {
         missionDone = true;
         updateHud();
-        notify('اكتملت المهمة التجريبية: وصلت إلى نقطة التجمع.');
-      } else if (!goalNeedsSuppliesNotified) {
-        goalNeedsSuppliesNotified = true;
-        notify('قبل التوجه إلى نقطة التجمع، اجمع صندوق الإمدادات.');
+        notify('اكتملت المهمة: الإمدادات جُمعت والطريق أُمّن ووصلت إلى التجمع.');
       }
     }
     const nearCache = !suppliesCollected && player.position.distanceTo(supplyCache.position) < 3.5;
