@@ -139,3 +139,53 @@ body.game-started #mobile-controls{display:flex}
 #start-screen{z-index:20}
 #mobile-controls{z-index:12}
 #look-area{z-index:5}
+
+/* Reliable simulated landscape for portrait Android webviews. Do not depend on
+   pointer:coarse/orientation media queries: embedded browsers report them inconsistently. */
+body.portrait-landscape-sim #app{
+  position:fixed !important;
+  top:0 !important;
+  left:100vw !important;
+  width:100dvh !important;
+  height:100vw !important;
+  transform-origin:top left !important;
+  transform:rotate(90deg) !important;
+  overflow:hidden !important;
+}
+body.portrait-landscape-sim #game-root,
+body.portrait-landscape-sim #hud{
+  width:100% !important;
+  height:100% !important;
+}
+body.portrait-landscape-sim #start-screen{
+  position:absolute !important;
+  inset:0 !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:10px !important;
+  overflow:hidden !important;
+}
+body.portrait-landscape-sim .start-card{
+  width:min(78dvh,900px) !important;
+  max-width:calc(100dvh - 24px) !important;
+  max-height:88vw !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain;
+  padding:clamp(12px,2.2vw,24px) !important;
+}
+body.portrait-landscape-sim .start-card h1{font-size:clamp(26px,5vw,42px) !important}
+body.portrait-landscape-sim .start-card p{font-size:clamp(10px,1.7vw,15px) !important;line-height:1.5}
+body.portrait-landscape-sim .howto ol{font-size:clamp(9px,1.45vw,13px) !important;line-height:1.45}
+body.portrait-landscape-sim .howto small,
+body.portrait-landscape-sim .start-card>small{font-size:clamp(8px,1.2vw,11px) !important}
+body.portrait-landscape-sim .identity-strip,
+body.portrait-landscape-sim .outfit-picker{margin:5px 0;padding:6px}
+body.portrait-landscape-sim .start-card button{margin:6px 0;padding:9px 22px}
+body:not(.game-started) #mobile-controls{display:none !important;visibility:hidden !important}
+body:not(.game-started) #look-area,
+body:not(.game-started) #crosshair,
+body:not(.game-started) #interact-hint{display:none !important}
+body.game-started #mobile-controls{display:flex;visibility:visible}
+#mobile-controls{direction:ltr;z-index:30}
+#start-screen{z-index:40}
+#joystick,#look-area,.mobile-actions button{touch-action:none;-webkit-user-select:none;user-select:none}

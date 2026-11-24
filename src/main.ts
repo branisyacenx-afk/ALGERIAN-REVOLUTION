@@ -7,7 +7,8 @@ if (!root) throw new Error('Game root not found');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9ba99a);
 scene.fog = new THREE.Fog(0x9ba99a, 34, 150);
-const isPortraitTouch = () => window.matchMedia('(pointer: coarse) and (orientation: portrait)').matches;
+// Some Android in-app browsers report pointer/orientation media features unreliably.
+const isPortraitTouch = () => window.innerHeight > window.innerWidth && window.innerWidth < 1100;
 // Apply the simulated landscape layout immediately, before the start screen is shown.
 document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
 const viewWidth = () => isPortraitTouch() ? window.innerHeight : window.innerWidth;
@@ -645,11 +646,16 @@ function animate(): void {
 }
 animate();
 
-window.addEventListener('resize', () => {
-  document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
+function syncViewport(): void {
+  const portrait = isPortraitTouch();
+  document.body.classList.toggle('portrait-landscape-sim', portrait);
   camera.aspect = viewWidth() / viewHeight();
   camera.updateProjectionMatrix();
   renderer.setSize(viewWidth(), viewHeight());
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
-});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+}
+window.addEventListener('resize', syncViewport);
+window.addEventListener('orientationchange', () => window.setTimeout(syncViewport, 120));
+window.visualViewport?.addEventListener('resize', syncViewport);
+syncViewport();
 updateHud();
