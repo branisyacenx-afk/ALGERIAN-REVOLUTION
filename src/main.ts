@@ -417,6 +417,8 @@ function animate(): void {
       stamina = THREE.MathUtils.clamp(stamina + 24 * delta, 0, 100);
       player.traverse((part) => { if (part instanceof THREE.Mesh && part.userData.motionRole) part.rotation.x *= Math.max(0, 1 - delta * 8); });
     }
+    $('#stamina-value').textContent = `${Math.round(stamina)}%`;
+    $('#stamina-meter').style.width = `${stamina}%`;
     if (keys.has('Space') && onGround) { verticalVelocity = 6.2; onGround = false; }
     verticalVelocity -= 17 * delta;
     player.position.y += verticalVelocity * delta;
