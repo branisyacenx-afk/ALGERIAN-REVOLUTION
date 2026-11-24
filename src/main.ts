@@ -859,6 +859,7 @@ function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
 let cinematicTimer: number | null = null;
 function launchMissionBriefing(): void {
   if (cinematicTimer !== null) window.clearTimeout(cinematicTimer);
+  configureCampaignStage();
   const chapter = campaignChapter(campaignStage);
   const sector = campaignSector(campaignStage);
   const plan = campaignStage % 3 === 1
@@ -1608,8 +1609,15 @@ function animate(): void {
     const aimed = getAimedEnemy();
     $('#crosshair').classList.toggle('targeting', Boolean(aimed));
   } else if (!started) {
-    camera.position.set(Math.sin(time * 0.08) * 34, 19, 35);
-    camera.lookAt(0, 1, -10);
+    // Cinematic preview: orbit the actual chapter battlefield before control is handed to the player.
+    const previewSector = campaignSector(campaignStage);
+    const orbit = time * 0.19;
+    camera.position.set(
+      previewSector.x + Math.sin(orbit) * 43,
+      17 + Math.sin(time * 0.42) * 2.2,
+      previewSector.z + 18 + Math.cos(orbit) * 43
+    );
+    camera.lookAt(previewSector.x, 2.2, previewSector.z - 23);
   }
   renderer.render(scene, camera);
 }
