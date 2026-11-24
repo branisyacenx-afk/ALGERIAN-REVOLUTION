@@ -546,7 +546,22 @@ const startScreen = $('#start-screen');
 const toast = $('#toast');
 let toastTimer = 0;
 function notify(message: string): void {
-  toast.textContent = message;
+  const translations: Record<string,string> = {
+    'Vous êtes tombé au combat. Recommencez la mission.':'لقد سقطت في المعركة. أعد المحاولة.',
+    'Suivez le marqueur de mission. Utilisez COUVERT près des buissons ou des fortifications.':'اتبع مؤشر المهمة واستخدم زر الاحتماء قرب الصخور والأشجار.',
+    'Rechargement en cours…':'جارٍ إعادة التلقيم…','Rechargement terminé.':'اكتمل التلقيم.',
+    'Plus de munitions. Rechargez votre arme.':'نفدت الذخيرة. أعد التلقيم.',
+    'Cible touchée ! Tirez encore pour la neutraliser.':'أصبت الهدف! أطلق مرة أخرى لإسقاطه.',
+    'Ennemi neutralisé — cible éliminée.':'تم إسقاط العدو!',
+    'Visée précise activée.':'تم تفعيل التصويب.','Visée désactivée.':'تم إيقاف التصويب.',
+    'Mission accomplie !':'اكتملت المهمة!',
+    'Approchez-vous des buissons ou des fortifications pour vous mettre à couvert.':'اقترب من الصخور أو الأشجار للاحتماء.',
+    'Vous êtes à couvert. Restez dans cette zone pour ne pas être repéré.':'أنت في وضع الاحتماء.',
+    'Vous avez quitté votre couverture.':'غادرت مكان الاحتماء.',
+    'Objectif : récupérez la caisse avant de continuer.':'الهدف: استرجع صندوق الإمدادات أولاً.'
+  };
+  const remaining = message.match(/Il reste (\\d+) ennemis/);
+  toast.textContent = translations[message] || (remaining ? 'بقي ' + remaining[1] + ' من الأعداء. أمّن الممر.' : message);
   toast.classList.add('show');
   window.clearTimeout(toastTimer);
   toastTimer = window.setTimeout(() => toast.classList.remove('show'), 2400);
@@ -702,7 +717,7 @@ document.addEventListener('pointermove', (event) => {
   // into the landscape game axes so horizontal swipes always turn the view naturally.
   const dragX = isPortraitTouch() ? dy : dx;
   const dragY = isPortraitTouch() ? -dx : dy;
-  yaw -= dragX * (aiming ? 0.0052 : 0.0072);
+  yaw += dragX * (aiming ? 0.0052 : 0.0072);
   pitch = THREE.MathUtils.clamp(pitch + dragY * (aiming ? 0.0038 : 0.0050), -0.72, 0.38);
 }, { passive: false });
 const releaseLook = (event: PointerEvent) => {
