@@ -35,17 +35,13 @@ document.addEventListener('click', (event) => {
   const button = target.closest<HTMLButtonElement>('#start-button, #missions-start');
   if (!button || button.disabled) return;
   button.dataset.originalLabel ||= button.innerHTML;
-  button.disabled = true;
-  button.style.opacity = '0.8';
-  button.setAttribute('aria-busy','true');
+  button.style.opacity = '0.85';
   const label = button.querySelector('b') || button;
   if (label instanceof HTMLElement) label.textContent = 'جارٍ دخول ساحة المعركة…';
   if (launchAttemptTimer !== null) window.clearTimeout(launchAttemptTimer);
   launchAttemptTimer = window.setTimeout(() => {
     if (!document.body.classList.contains('game-started')) {
-      button.disabled = false;
       button.style.opacity = '';
-      button.removeAttribute('aria-busy');
       showStartupFailure('لم يبدأ المشهد خلال المهلة. قد يكون محرك الرسومات أو تحميل اللعبة قد تعطل.');
     }
   }, 4500);
@@ -933,7 +929,7 @@ function beginGame(): void {
   gameBootComplete = true;
   if (launchAttemptTimer !== null) window.clearTimeout(launchAttemptTimer);
   launchAttemptTimer = null;
-  document.querySelectorAll<HTMLButtonElement>('#start-button,#missions-start').forEach((button) => { button.disabled = false; button.style.opacity = ''; button.removeAttribute('aria-busy'); });
+  document.querySelectorAll<HTMLButtonElement>('#start-button,#missions-start').forEach((button) => { button.style.opacity = ''; });
   document.querySelector('#startup-error')?.remove();
   document.body.classList.add('game-started');
   paused = false;
