@@ -97,6 +97,57 @@ for (let i = 0; i < 48; i++) {
   scene.add(rock);
 }
 
+
+function addStoneOutpost(x: number, z: number, rotation = 0): void {
+  const group = new THREE.Group();
+  const stone = new THREE.MeshStandardMaterial({ color: 0x777365, roughness: 1, flatShading: true });
+  const darkStone = new THREE.MeshStandardMaterial({ color: 0x4d4b42, roughness: 1 });
+  const timber = new THREE.MeshStandardMaterial({ color: 0x493724, roughness: 1 });
+  const wall = new THREE.Mesh(new THREE.BoxGeometry(7.2, 3.1, 0.65), stone);
+  wall.position.y = 1.55; wall.castShadow = true; wall.receiveShadow = true; group.add(wall);
+  const sideA = new THREE.Mesh(new THREE.BoxGeometry(0.65, 3.1, 5.2), stone);
+  sideA.position.set(-3.25, 1.55, 2.2); sideA.castShadow = true; group.add(sideA);
+  const sideB = sideA.clone(); sideB.position.x = 3.25; group.add(sideB);
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(5.2, 2.3, 4), darkStone);
+  roof.position.y = 4.05; roof.rotation.y = Math.PI / 4; roof.scale.set(1,1,0.78); roof.castShadow = true; group.add(roof);
+  const door = new THREE.Mesh(new THREE.BoxGeometry(1.25, 2.25, 0.12), timber);
+  door.position.set(0, 1.12, 2.55); group.add(door);
+  const lintel = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.22, 0.2), darkStone);
+  lintel.position.set(0, 2.35, 2.55); group.add(lintel);
+  group.position.set(x, 0, z); group.rotation.y = rotation; scene.add(group);
+}
+function addSandbagLine(x: number, z: number, count: number, rotation = 0): void {
+  const group = new THREE.Group();
+  const bagMat = new THREE.MeshStandardMaterial({ color: 0x8c8065, roughness: 1 });
+  for (let i = 0; i < count; i++) {
+    const bag = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.62, 3, 6), bagMat);
+    bag.rotation.z = Math.PI / 2; bag.position.set((i - (count - 1) / 2) * 0.72, 0.32, 0);
+    bag.castShadow = true; bag.receiveShadow = true; group.add(bag);
+    if (i % 2 === 0) {
+      const upper = bag.clone(); upper.position.y = 0.78; upper.position.x += 0.34; group.add(upper);
+    }
+  }
+  group.position.set(x, 0, z); group.rotation.y = rotation; scene.add(group);
+}
+function addWatchPost(x: number, z: number): void {
+  const group = new THREE.Group();
+  const wood = new THREE.MeshStandardMaterial({ color: 0x59432b, roughness: 1 });
+  for (const px of [-1.1, 1.1]) for (const pz of [-1.1, 1.1]) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 5.8, 6), wood);
+    post.position.set(px, 2.9, pz); post.castShadow = true; group.add(post);
+  }
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.25, 3.1), wood);
+  deck.position.y = 3.3; deck.castShadow = true; group.add(deck);
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(2.25, 1.5, 4), new THREE.MeshStandardMaterial({color:0x49483b,roughness:1}));
+  roof.position.y = 6.3; roof.rotation.y = Math.PI / 4; roof.castShadow = true; group.add(roof);
+  group.position.set(x, 0, z); scene.add(group);
+}
+addStoneOutpost(11, -23, -0.18);
+addStoneOutpost(-13, -39, 0.22);
+addSandbagLine(-5.5, -14, 7, 0.12);
+addSandbagLine(5.2, -31, 6, -0.18);
+addWatchPost(15, -42);
+
 function makePerson(color: number, scale = 1): THREE.Group {
   // Improved temporary historical-inspired silhouettes. These remain procedural placeholders,
   // not scans or representations of named historical people.
@@ -161,10 +212,11 @@ weapon.position.set(0.38, 1.18, -0.48);
 player.add(weapon);
 
 const enemies: THREE.Group[] = [];
-for (let i = 0; i < 4; i++) {
+for (let i = 0; i < 6; i++) {
   const enemy = makePerson(0x55594e, 0.95);
   enemy.position.set((i - 1.5) * 5.5, 0, -15 - (i % 2) * 5);
   enemy.userData.health = 2;
+  enemy.userData.fireCooldown = 1.2 + i * 0.35;
   enemy.userData.patrolX = enemy.position.x;
   enemy.userData.patrolZ = enemy.position.z;
   enemy.userData.patrolPhase = i * 1.7;
@@ -279,6 +331,7 @@ function resetEnemies(): void {
     const enemy = makePerson(0x55594e, 0.95);
     enemy.position.set((i - 1.5) * 5.5, 0, -15 - (i % 2) * 5);
     enemy.userData.health = 2;
+    enemy.userData.fireCooldown = 1.2 + i * 0.35;
     enemy.userData.patrolX = enemy.position.x;
     enemy.userData.patrolZ = enemy.position.z;
     enemy.userData.patrolPhase = i * 1.7;
@@ -317,7 +370,7 @@ document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
   $('#victory-screen').classList.remove('visible');
   startScreen.style.display = 'none';
   if (window.matchMedia('(pointer:fine)').matches) renderer.domElement.requestPointerLock();
-  notify('تحرّك نحو العلامة الذهبية في الممر.');
+  notify('تقدم بحذر: ستواجه دوريات مسلحة. استخدم الحواجز الصخرية وأمّن الإمدادات.');
 }
 $('#outfit-algerian').addEventListener('click', () => setPlayerOutfit('algerian'));
 $('#outfit-french').addEventListener('click', () => setPlayerOutfit('french'));
@@ -624,6 +677,24 @@ function animate(): void {
         enemy.position.x = THREE.MathUtils.damp(enemy.position.x, patrolX, 1.5, delta);
         enemy.position.z = THREE.MathUtils.damp(enemy.position.z, patrolZ, 1.5, delta);
         enemy.rotation.y = Math.atan2(-(enemy.position.x - (enemy.userData.patrolX as number)), -(enemy.position.z - (enemy.userData.patrolZ as number)));
+      }
+      enemy.userData.fireCooldown = Math.max(0, (enemy.userData.fireCooldown as number) - delta);
+      if (distance >= 7 && distance < 25 && enemy.userData.fireCooldown <= 0) {
+        enemy.lookAt(player.position.x, enemy.position.y, player.position.z);
+        const from = enemy.position.clone().add(new THREE.Vector3(0, 1.35, 0));
+        const to = player.position.clone().add(new THREE.Vector3(0, 1.0, 0));
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints([from, to]);
+        const line = new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({color:0xd8a76c,transparent:true,opacity:0.7}));
+        scene.add(line);
+        window.setTimeout(() => { scene.remove(line); lineGeometry.dispose(); (line.material as THREE.Material).dispose(); }, 120);
+        enemy.userData.fireCooldown = 2.8 + Math.random() * 1.1;
+        if (damageCooldown <= 0 && Math.random() > 0.35) {
+          health = Math.max(0, health - 5);
+          damageCooldown = 0.7;
+          $('#damage-flash').classList.add('active');
+          window.setTimeout(() => $('#damage-flash').classList.remove('active'), 130);
+          updateHud();
+        }
       }
       if (distance < 3.2 && damageCooldown <= 0) {
         health = Math.max(0, health - 8);

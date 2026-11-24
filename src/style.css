@@ -206,3 +206,8 @@ body.game-started #mobile-controls{display:flex;visibility:visible}
 body:not(.game-started) #pickup-button,body:not(.game-started) #camera-zoom-controls{display:none !important}
 body.game-started #camera-zoom-controls{display:flex}
 body:not(.game-started) #camera-zoom-controls{display:none}
+
+/* More immersive field atmosphere and clearer tactical status. */
+#game-root canvas{filter:saturate(1.08) contrast(1.04)}
+.mission{background:linear-gradient(135deg,#101a15eF,#26352bd9);border-color:#d5b87877;box-shadow:0 10px 32px #0005}
+#radar-panel{background:#101914df;box-shadow:0 8px 24px #0005}
