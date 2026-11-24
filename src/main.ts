@@ -919,28 +919,47 @@ function beginGame(): void {
   cinematicTimer = null;
   $('#mission-cinematic').classList.remove('visible');
   $('#mission-cinematic').setAttribute('aria-hidden','true');
+
+  // Hand control to the live scene before doing any stage-specific work.
+  // This prevents a stage setup exception from trapping the player in the menu.
   health = 100; stamina = 100; damageCooldown = 0; ammo = 12; reserveAmmo = 48;
   gameOver = false; reloading = false; aiming = false; crouching = false; playerHidden = false;
-  player.scale.set(1,1,1); $('#hide-button').classList.remove('active'); $('#hide-button').innerHTML = '<span>▣</span><small>احتماء</small>';
+  player.scale.set(1,1,1);
+  $('#hide-button').classList.remove('active');
+  $('#hide-button').innerHTML = '<span>▣</span><small>احتماء</small>';
   yaw = 0; pitch = -0.10; cameraDistance = 8.4; verticalVelocity = 0; onGround = true;
-  configureCampaignStage();
   document.body.classList.remove('portrait-landscape-sim','needs-landscape');
   started = true;
+  paused = false;
   gameBootComplete = true;
   if (launchAttemptTimer !== null) window.clearTimeout(launchAttemptTimer);
   launchAttemptTimer = null;
-  document.querySelectorAll<HTMLButtonElement>('#start-button,#missions-start').forEach((button) => { button.style.opacity = ''; });
+  document.querySelectorAll<HTMLButtonElement>('#start-button,#missions-start').forEach((button) => {
+    button.style.opacity = '';
+    button.disabled = false;
+  });
   document.querySelector('#startup-error')?.remove();
   document.body.classList.add('game-started');
-  paused = false;
-  // Do not request fullscreen or lock the device orientation; preserve portrait touch layout.
   $('#pause-screen').classList.remove('visible');
   $('#victory-screen').classList.remove('visible');
   startScreen.hidden = true;
   startScreen.setAttribute('aria-hidden','true');
   startScreen.style.display = 'none';
-  if (window.matchMedia('(pointer:fine)').matches) { try { renderer.domElement.requestPointerLock(); } catch (error) { console.warn('Pointer lock unavailable:', error); } }
-  notify('Suivez le marqueur de mission. Utilisez COUVERT près des buissons ou des fortifications.');
+
+  // Stage setup is isolated: if one optional stage element fails, the game
+  // loop and player controls remain active and the actual error is reported.
+  try {
+    configureCampaignStage();
+  } catch (error) {
+    console.error('Campaign stage setup failed:', error);
+    const detail = error instanceof Error ? error.message : String(error);
+    notify('بدأت المعركة، لكن تعذر إعداد بعض عناصر المرحلة: ' + detail);
+  }
+  if (window.matchMedia('(pointer:fine)').matches) {
+    try { renderer.domElement.requestPointerLock(); }
+    catch (error) { console.warn('Pointer lock unavailable:', error); }
+  }
+  notify('اتبع مؤشر المهمة واستخدم زر الاحتماء قرب الصخور والأشجار.');
 }
 $('#outfit-algerian').addEventListener('click', () => setPlayerOutfit('algerian'));
 $('#outfit-french').addEventListener('click', () => setPlayerOutfit('french'));
