@@ -945,9 +945,26 @@ function beginGame(): void {
 
   // Hand control to the live scene before doing any stage-specific work.
   // This prevents a stage setup exception from trapping the player in the menu.
-  launchDebugPhase = 'إعادة ضبط صحة اللاعب';
-  health = 100; stamina = 100; damageCooldown = 0; ammo = 12; reserveAmmo = 48;
-  gameOver = false; reloading = false; aiming = false; crouching = false; playerHidden = false;
+  launchDebugPhase = 'إعادة ضبط الصحة';
+  health = 100;
+  launchDebugPhase = 'إعادة ضبط التحمل';
+  stamina = 100;
+  launchDebugPhase = 'إعادة ضبط مؤقت الضرر';
+  damageCooldown = 0;
+  launchDebugPhase = 'إعادة ضبط الذخيرة';
+  ammo = 12;
+  launchDebugPhase = 'إعادة ضبط مخزون الذخيرة';
+  reserveAmmo = 48;
+  launchDebugPhase = 'إعادة ضبط حالة السقوط';
+  gameOver = false;
+  launchDebugPhase = 'إعادة ضبط إعادة التلقيم';
+  reloading = false;
+  launchDebugPhase = 'إعادة ضبط التصويب';
+  aiming = false;
+  launchDebugPhase = 'إعادة ضبط الانحناء';
+  crouching = false;
+  launchDebugPhase = 'إعادة ضبط الاختباء';
+  playerHidden = false;
   launchDebugPhase = 'إعادة ضبط نموذج اللاعب';
   player.scale.set(1,1,1);
   launchDebugPhase = 'تهيئة زر الاحتماء';
