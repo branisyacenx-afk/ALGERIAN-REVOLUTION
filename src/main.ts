@@ -560,7 +560,7 @@ function notify(message: string): void {
     'Vous avez quitté votre couverture.':'غادرت مكان الاحتماء.',
     'Objectif : récupérez la caisse avant de continuer.':'الهدف: استرجع صندوق الإمدادات أولاً.'
   };
-  const remaining = message.match(/Il reste (\\d+) ennemis/);
+  const remaining = message.includes('Il reste') ? message.split(' ')[2] : null;
   toast.textContent = translations[message] || (remaining ? 'بقي ' + remaining[1] + ' من الأعداء. أمّن الممر.' : message);
   toast.classList.add('show');
   window.clearTimeout(toastTimer);
