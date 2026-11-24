@@ -8,6 +8,8 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9ba99a);
 scene.fog = new THREE.Fog(0x9ba99a, 34, 150);
 const isPortraitTouch = () => window.matchMedia('(pointer: coarse) and (orientation: portrait)').matches;
+// Apply the simulated landscape layout immediately, before the start screen is shown.
+document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
 const viewWidth = () => isPortraitTouch() ? window.innerHeight : window.innerWidth;
 const viewHeight = () => isPortraitTouch() ? window.innerWidth : window.innerHeight;
 const camera = new THREE.PerspectiveCamera(65, viewWidth() / viewHeight(), 0.1, 250);
@@ -293,6 +295,7 @@ function beginGame(): void {
 document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
   }
   started = true;
+  document.body.classList.add('game-started');
   paused = false;
   // Android browsers generally allow orientation lock after a user gesture/fullscreen.
   if (window.matchMedia('(pointer: coarse)').matches) {
@@ -621,6 +624,7 @@ function animate(): void {
         if (health === 0) {
           gameOver = true; started = false;
           $('#start-button').textContent = 'إعادة المحاولة';
+          document.body.classList.remove('game-started');
           startScreen.style.display = 'grid';
           notify('انتهت المحاولة. يمكنك البدء من جديد.');
         }
