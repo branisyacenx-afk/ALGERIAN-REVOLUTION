@@ -1187,8 +1187,9 @@ function animate(): void {
   if (started && !gameOver && !paused) {
     const inputX = (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0) + touchX;
     const inputZ = (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0) - touchY;
-    forward.set(Math.sin(yaw), 0, -Math.cos(yaw));
-    right.set(Math.cos(yaw), 0, Math.sin(yaw));
+    // Movement axes are camera-relative: joystick up always advances into the view.
+    forward.set(Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
+    right.set(Math.cos(yaw), 0, Math.sin(yaw)).normalize();
     direction.set(0, 0, 0).addScaledVector(right, inputX).addScaledVector(forward, inputZ);
     if (direction.lengthSq() > 0.01) {
       direction.normalize();
@@ -1204,7 +1205,11 @@ function animate(): void {
         if (role === 'leftLeg' || role === 'rightArm') part.rotation.x = stride;
         if (role === 'rightLeg' || role === 'leftArm') part.rotation.x = -stride;
       });
-      player.rotation.y = Math.atan2(-direction.x, -direction.z);
+      // The imported Soldier model faces +Z in its bind pose.
+      // Rotate its +Z axis toward the actual world-space travel vector.
+      const targetHeading = Math.atan2(direction.x, direction.z);
+      const headingDelta = Math.atan2(Math.sin(targetHeading - player.rotation.y), Math.cos(targetHeading - player.rotation.y));
+      player.rotation.y += headingDelta * (1 - Math.exp(-delta * 13));
     }
     if (direction.lengthSq() <= 0.01) {
       setCharacterAnimation(player, 'Idle');
@@ -1325,7 +1330,10 @@ function animate(): void {
     const cameraTarget = player.position.clone().add(new THREE.Vector3(0, crouching ? 0.92 : aiming ? 1.52 : 1.34, 0));
     const aimForward = new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw));
     const lookTarget = cameraTarget.clone().addScaledVector(aimForward, (cameraMode === 'front' ? -1 : 1) * (aiming ? 16 : 8));
-    camera.position.lerp(cameraTarget.clone().add(cameraOffset), 1 - Math.pow(0.00008, delta));
+    // Follow the player from a stable over-the-shoulder anchor; damp rotation and translation.
+    const desiredCameraPosition = cameraTarget.clone().add(cameraOffset);
+    const followAlpha = 1 - Math.exp(-delta * (aiming ? 15 : 9));
+    camera.position.lerp(desiredCameraPosition, followAlpha);
     camera.lookAt(lookTarget);
     const aimed = getAimedEnemy();
     $('#crosshair').classList.toggle('targeting', Boolean(aimed));
