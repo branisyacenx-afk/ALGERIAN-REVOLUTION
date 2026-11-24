@@ -792,7 +792,7 @@ function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
   for (let i = 0; i < count; i++) {
     const enemy = makePerson(0x55594e, 0.95);
     if (soldierTemplate) attachSoldierModel(enemy, 0x858b7b);
-    enemy.position.set((i - 1.5) * 5.5, 0, -15 - (i % 2) * 5);
+    enemy.position.set(base.x + (i - (count - 1) / 2) * 4.4, 0, base.z - 15 - (i % 3) * 5);
     enemy.userData.health = 2;
     enemy.userData.fireCooldown = 1.0 + i * 0.18;
     enemy.userData.role = i % 6 === 0 ? 'sniper' : 'rifle';
