@@ -455,10 +455,10 @@ async function loadSoldierCharacters(): Promise<void> {
     enemies.forEach((enemy) => enemy.traverse((part) => {
       if (part instanceof THREE.Mesh) enemyMeshes.push(part);
     }));
-    notify('اكتمل تحميل مجسمات الجنود ثلاثية الأبعاد وحركاتهم.');
+    notify('Modèles 3D et animations des soldats chargés.');
   } catch (error) {
     console.warn('Soldier model could not be loaded; keeping the offline fallback.', error);
-    notify('تعذر تحميل نموذج الجندي من الإنترنت؛ تحقق من الاتصال لإظهار المجسمات البشرية.');
+    notify('Impossible de charger le modèle 3D du soldat. Vérifiez votre connexion Internet.');
   }
 }
 void loadSoldierCharacters();
@@ -560,12 +560,12 @@ function updateHud(): void {
   const progress = missionDone ? 100 : !suppliesCollected ? 0 : enemies.length > 0 ? 33 : 66;
   $('#mission-progress').style.width = `${progress}%`;
   $('#mission-status').textContent = missionDone
-    ? 'اكتملت المهمة — وصلت إلى نقطة التجمع!'
+    ? 'Mission terminée — point de ralliement atteint !'
     : !suppliesCollected
-      ? '1/3: اجمع صندوق الإمدادات (E)'
+      ? '1/3 : récupérez la caisse (E)'
       : enemies.length > 0
-        ? `2/3: حيّد التهديدات المتبقية (${enemies.length})`
-        : '3/3: الطريق آمن، توجه إلى نقطة التجمع';
+        ? `2/3 : neutralisez les ennemis (${enemies.length})`
+        : '3/3 : passage sécurisé, rejoignez le ralliement';
 }
 
 function resetEnemies(): void {
@@ -594,7 +594,7 @@ function beginGame(): void {
   if (gameOver) {
     health = 100; stamina = 100; damageCooldown = 0; ammo = 12; reserveAmmo = 48; missionDone = false; suppliesCollected = false; goalNeedsSuppliesNotified = false; goalNeedsEnemiesNotified = false; gameOver = false;
     supplyCache.visible = true;
-    player.position.set(0, 0, 9); player.rotation.set(0, 0, 0); player.scale.set(1,1,1); crouching = false; playerHidden = false; $('#hide-button').classList.remove('active'); $('#hide-button').textContent = 'اختباء';
+    player.position.set(0, 0, 9); player.rotation.set(0, 0, 0); player.scale.set(1,1,1); crouching = false; playerHidden = false; $('#hide-button').classList.remove('active'); $('#hide-button').innerHTML = '<span>▣</span><small>COUVERT</small>';
     yaw = 0; pitch = -0.10; cameraDistance = 7.2;
     verticalVelocity = 0; onGround = true; resetEnemies(); updateHud();
 document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
@@ -620,7 +620,7 @@ document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
   $('#victory-screen').classList.remove('visible');
   startScreen.style.display = 'none';
   if (window.matchMedia('(pointer:fine)').matches) renderer.domElement.requestPointerLock();
-  notify('🇩🇿 العلم الجزائري يحدد نقطة التجمع. ابحث عن الشجيرات والصخور واضغط C للاختباء.');
+  notify('Suivez le marqueur de mission. Utilisez COUVERT près des buissons ou des fortifications.');
 }
 $('#outfit-algerian').addEventListener('click', () => setPlayerOutfit('algerian'));
 $('#outfit-french').addEventListener('click', () => setPlayerOutfit('french'));
@@ -663,8 +663,8 @@ document.addEventListener('pointerlockchange', () => {
 });
 document.addEventListener('mousemove', (event) => {
   if (!started || document.pointerLockElement !== renderer.domElement) return;
-  yaw -= event.movementX * 0.0032;
-  pitch = THREE.MathUtils.clamp(pitch - event.movementY * 0.0026, -0.72, 0.45);
+  yaw += event.movementX * 0.0032;
+  pitch = THREE.MathUtils.clamp(pitch + event.movementY * 0.0026, -0.72, 0.45);
 });
 // Full-screen touch camera: drag anywhere on the playfield, not just the right half.
 // Interactive controls retain their own gestures (joystick, fire, reload, pickup, menus).
@@ -693,8 +693,8 @@ document.addEventListener('pointermove', (event) => {
   // into the landscape game axes so horizontal swipes always turn the view naturally.
   const dragX = isPortraitTouch() ? dy : dx;
   const dragY = isPortraitTouch() ? -dx : dy;
-  yaw -= dragX * (aiming ? 0.0048 : 0.0065);
-  pitch = THREE.MathUtils.clamp(pitch - dragY * (aiming ? 0.0038 : 0.0052), -0.82, 0.48);
+  yaw += dragX * (aiming ? 0.0048 : 0.0065);
+  pitch = THREE.MathUtils.clamp(pitch + dragY * (aiming ? 0.0038 : 0.0052), -0.82, 0.48);
 }, { passive: false });
 const releaseLook = (event: PointerEvent) => {
   if (lookPointer === event.pointerId) lookPointer = null;
@@ -712,26 +712,26 @@ function reloadWeapon(): void {
   if (!started || gameOver || paused || reloading || ammo === 12 || reserveAmmo <= 0) return;
   reloading = true;
   $('#reload-button').classList.add('reloading');
-  notify('جارٍ تلقيم السلاح…');
+  notify('Rechargement en cours…');
   window.setTimeout(() => {
     if (!started || gameOver) { reloading = false; $('#reload-button').classList.remove('reloading'); return; }
     const loaded = Math.min(12 - ammo, reserveAmmo);
     ammo += loaded; reserveAmmo -= loaded; reloading = false;
     $('#reload-button').classList.remove('reloading');
-    updateHud(); notify('اكتمل تلقيم السلاح.');
+    updateHud(); notify('Rechargement terminé.');
   }, 1050);
 }
 function interact(): void {
   if (!started || gameOver || suppliesCollected) return;
   if (player.position.distanceTo(supplyCache.position) > 4.4) {
-    notify('اقترب أكثر من صندوق الإمدادات حتى يظهر زر الالتقاط.');
+    notify('Approchez-vous davantage de la caisse.');
     return;
   }
   suppliesCollected = true;
   supplyCache.visible = false;
   reserveAmmo += 12;
   updateHud();
-  notify('جمعت الإمدادات. تابع إلى نقطة التجمع.');
+  notify('Caisse récupérée. Continuez vers le point de ralliement.');
 }
 document.addEventListener('keydown', (event) => {
   if (event.code === 'KeyR' && !event.repeat) reloadWeapon();
@@ -740,17 +740,17 @@ document.addEventListener('keydown', (event) => {
 $('#reload-button').addEventListener('click', reloadWeapon);
 $('#interact-hint').addEventListener('click', interact);
 $('#pickup-button').addEventListener('click', interact);
-$('#camera-zoom-in').addEventListener('click', () => { cameraDistance = Math.max(3.8, cameraDistance - 0.65); notify('تم تقريب الكاميرا.'); });
-$('#camera-zoom-out').addEventListener('click', () => { cameraDistance = Math.min(14, cameraDistance + 0.8); notify('تم إبعاد الكاميرا.'); });
+$('#camera-zoom-in').addEventListener('click', () => { cameraDistance = Math.max(3.8, cameraDistance - 0.65); notify('Caméra rapprochée.'); });
+$('#camera-zoom-out').addEventListener('click', () => { cameraDistance = Math.min(14, cameraDistance + 0.8); notify('Caméra éloignée.'); });
 $('#camera-mode-toggle').addEventListener('click', () => {
   cameraMode = cameraMode === 'behind' ? 'front' : 'behind';
-  $('#camera-mode-toggle').textContent = cameraMode === 'behind' ? 'أمام' : 'خلف';
-  notify(cameraMode === 'behind' ? 'الكاميرا خلف الشخصية: ترى طريقك أمامك.' : 'الكاميرا أمام الشخصية: ترى وجه الجندي واتجاهه.');
+  $('#camera-mode-toggle').textContent = cameraMode === 'behind' ? 'ARRIÈRE' : 'AVANT';
+  notify(cameraMode === 'behind' ? 'Vue arrière : vous regardez devant le soldat.' : 'Vue avant : la caméra montre le visage du soldat.');
 });
 $('#camera-reset').addEventListener('click', () => {
   cameraMode = 'behind'; cameraDistance = 8.4; yaw = 0; pitch = -0.10;
-  $('#camera-mode-toggle').textContent = 'أمام';
-  notify('أعدنا الكاميرا إلى وضعها الطبيعي خلف الشخصية.');
+  $('#camera-mode-toggle').textContent = 'ARRIÈRE';
+  notify('Caméra réinitialisée derrière le soldat.');
 });
 window.addEventListener('blur', () => keys.clear());
 
@@ -771,11 +771,11 @@ function getAimedEnemy(): THREE.Group | undefined {
 }
 function shoot(): void {
   if (!started || gameOver || paused || missionDone || reloading || ammo <= 0) {
-    if (ammo <= 0) notify('انتهت الذخيرة في هذا النموذج التجريبي.');
+    if (ammo <= 0) notify('Plus de munitions. Rechargez votre arme.');
     return;
   }
   ammo--;
-  if (playerHidden) { crouching = false; playerHidden = false; player.scale.y = 1; $('#hide-button').classList.remove('active'); $('#hide-button').textContent = 'اختباء'; notify('كشف إطلاق النار موقعك؛ غادر الغطاء أو ابحث عن ساتر جديد.'); }
+  if (playerHidden) { crouching = false; playerHidden = false; player.scale.y = 1; $('#hide-button').classList.remove('active'); $('#hide-button').textContent = 'اختباء'; notify('Votre tir a révélé votre position. Changez de couverture.'); }
   // Shoot through the screen reticle so camera aim and hit detection agree.
   // The same centered reticle drives aim feedback and hit detection.
   const target = getAimedEnemy();
@@ -801,7 +801,7 @@ function shoot(): void {
         });
         $('#crosshair').classList.add('hit');
         window.setTimeout(() => $('#crosshair').classList.remove('hit'), 180);
-        notify('أصبت الهدف! أطلق مرة أخرى لإكمال تحييده.');
+        notify('Cible touchée ! Tirez encore pour la neutraliser.');
       } else {
         scene.remove(target);
         const index = enemies.indexOf(target);
@@ -814,7 +814,7 @@ function shoot(): void {
         }
         $('#crosshair').classList.add('hit');
         window.setTimeout(() => $('#crosshair').classList.remove('hit'), 220);
-        notify('تم تحييد الخصم.');
+        notify('Ennemi neutralisé.');
       }
   }
   updateHud();
@@ -841,14 +841,14 @@ window.addEventListener('blur', stopFiring);
 function toggleHide(): void {
   if (!started || paused || gameOver) return;
   if (!crouching) {
-    if (!isPlayerInCover()) { notify('اقترب من الشجيرات أو التحصينات أولاً حتى تختبئ.'); return; }
+    if (!isPlayerInCover()) { notify('Approchez-vous des buissons ou des fortifications pour vous mettre à couvert.'); return; }
     crouching = true; playerHidden = true; player.scale.y = 0.72;
-    $('#hide-button').classList.add('active'); $('#hide-button').textContent = 'خروج';
-    notify('أنت مختبئ داخل الغطاء؛ الدوريات لن ترصدك ما دمت في منطقة التمويه.');
+    $('#hide-button').classList.add('active'); $('#hide-button').innerHTML = '<span>↗</span><small>SORTIR</small>';
+    notify('Vous êtes à couvert. Restez dans cette zone pour ne pas être repéré.');
   } else {
     crouching = false; playerHidden = false; player.scale.y = 1;
     $('#hide-button').classList.remove('active'); $('#hide-button').textContent = 'اختباء';
-    notify('خرجت من وضع الاختباء.');
+    notify('Vous avez quitté votre couverture.');
   }
 }
 $('#hide-button').addEventListener('click', toggleHide);
@@ -858,7 +858,7 @@ $('#aim-button').addEventListener('click', () => {
   aiming = !aiming;
   $('#aim-button').classList.toggle('active', aiming);
   $('#crosshair').classList.toggle('aiming', aiming);
-  notify(aiming ? 'وضع التصويب الدقيق: الكاميرا أقرب والحركة أبطأ.' : 'تم إلغاء وضع التصويب.');
+  notify(aiming ? 'Visée précise activée.' : 'Visée désactivée.');
 });
 $('#jump-button').addEventListener('click', () => { if (started && !gameOver && onGround) { verticalVelocity = 6.2; onGround = false; } });
 const sprintButton = $('#sprint-button');
@@ -947,8 +947,8 @@ function animate(): void {
   if (started && !gameOver && !paused) {
     const inputX = (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0) + touchX;
     const inputZ = (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0) - touchY;
-    forward.set(-Math.sin(yaw), 0, -Math.cos(yaw));
-    right.set(Math.cos(yaw), 0, -Math.sin(yaw));
+    forward.set(Math.sin(yaw), 0, -Math.cos(yaw));
+    right.set(Math.cos(yaw), 0, Math.sin(yaw));
     direction.set(0, 0, 0).addScaledVector(right, inputX).addScaledVector(forward, inputZ);
     if (direction.lengthSq() > 0.01) {
       direction.normalize();
@@ -979,17 +979,17 @@ function animate(): void {
     if (player.position.y <= 0) { player.position.y = 0; verticalVelocity = 0; onGround = true; }
     player.position.x = THREE.MathUtils.clamp(player.position.x, -195, 195);
     player.position.z = THREE.MathUtils.clamp(player.position.z, -195, 175);
-    if (crouching && !isPlayerInCover()) { crouching = false; playerHidden = false; player.scale.y = 1; $('#hide-button').classList.remove('active'); $('#hide-button').textContent = 'اختباء'; notify('خرجت من منطقة الغطاء؛ لم تعد مختبئاً.'); }
+    if (crouching && !isPlayerInCover()) { crouching = false; playerHidden = false; player.scale.y = 1; $('#hide-button').classList.remove('active'); $('#hide-button').textContent = 'اختباء'; notify('Vous avez quitté la zone de couverture.'); }
     else playerHidden = crouching && isPlayerInCover();
 
     const distanceToGoal = player.position.distanceTo(marker.position);
     if (!missionDone && distanceToGoal < 3.2) {
       if (!suppliesCollected && !goalNeedsSuppliesNotified) {
         goalNeedsSuppliesNotified = true;
-        notify('المهمة الأولى: اجمع صندوق الإمدادات قبل التقدم.');
+        notify('Objectif : récupérez la caisse avant de continuer.');
       } else if (suppliesCollected && enemies.length > 0 && !goalNeedsEnemiesNotified) {
         goalNeedsEnemiesNotified = true;
-        notify(`لا تزال هناك ${enemies.length} تهديدات. أمّن الطريق أولاً.`);
+        notify(`Il reste ${enemies.length} ennemis. Sécurisez le passage.`);
       } else if (suppliesCollected && enemies.length === 0) {
         missionDone = true;
         paused = true;
@@ -998,7 +998,7 @@ function animate(): void {
         releaseSprint();
         $('#victory-screen').classList.add('visible');
         updateHud();
-        notify('اكتملت المهمة: الإمدادات جُمعت والطريق أُمّن ووصلت إلى التجمع.');
+        notify('Mission accomplie !');
       }
     }
     const cacheDistance = player.position.distanceTo(supplyCache.position);
@@ -1007,7 +1007,7 @@ function animate(): void {
     const pickupButton = $('#pickup-button') as HTMLButtonElement;
     pickupButton.classList.toggle('visible', nearCache);
     pickupButton.disabled = !nearCache;
-    pickupButton.textContent = cacheDistance < 4.4 ? 'التقط صندوق الإمدادات' : `اقترب من الصندوق · ${Math.ceil(cacheDistance)}م`;
+    pickupButton.textContent = cacheDistance < 4.4 ? 'RÉCUPÉRER LA CAISSE' : `APPROCHEZ · ${Math.ceil(cacheDistance)} m`;
     enemies.forEach((enemy, index) => {
       if (enemy.parent === null) return;
       const distance = enemy.position.distanceTo(player.position);

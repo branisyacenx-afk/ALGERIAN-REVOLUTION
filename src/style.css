@@ -332,3 +332,37 @@ body.game-started #camera-zoom-controls{display:flex!important}
 @media(max-width:900px) and (pointer:coarse) and (orientation:landscape){
   #look-area{right:76px!important;width:32%!important;height:45%!important;top:22%!important}
 }
+
+
+/* French UI and consistent touch behavior for the playable test build. */
+html,body,#app,#hud,#game-root{direction:ltr}
+body{font-family:Arial,Helvetica,sans-serif}
+#hud,#game-root{touch-action:none}
+#look-area{display:none!important}
+#camera-zoom-controls{direction:ltr}
+#camera-zoom-controls button{font-family:Arial,sans-serif;font-size:16px!important;font-weight:800}
+#camera-zoom-controls #camera-mode-toggle{width:68px!important;min-width:68px!important;font-size:10px!important;letter-spacing:.4px}
+#start-screen{direction:ltr}
+.start-card{text-align:left}
+.start-card h1{font-family:Arial,Helvetica,sans-serif;font-size:clamp(27px,5vw,44px);letter-spacing:1px}
+.start-card p,.howto,.outfit-picker{ text-align:left}
+.howto ol{padding-left:20px;padding-right:0}
+.howto li{margin:4px 0}
+.howto strong,.outfit-picker strong{letter-spacing:.5px}
+.identity-strip{justify-content:flex-start}
+.outfit-picker{justify-content:flex-start}
+.outfit-picker strong{width:100%}
+.start-card>button{width:100%;font-weight:900;letter-spacing:.6px}
+#mobile-controls{direction:ltr}
+.mobile-actions button{font-family:Arial,Helvetica,sans-serif;letter-spacing:.2px}
+.mobile-actions button small{font-size:8px!important}
+#fire-button{touch-action:none!important}
+#toast{direction:ltr;text-align:center;max-width:min(90vw,520px);font-family:Arial,sans-serif}
+#pickup-button{direction:ltr;font-weight:900;letter-spacing:.3px}
+#interact-hint{direction:ltr}
+#mission-status,.mission,.bottom-hud,.radar-title,.radar-legend{direction:ltr}
+@media(max-width:900px){
+ .mission{text-align:left}
+ .start-card{width:min(650px,calc(100vw - 28px))}
+ .bottom-hud{direction:ltr}
+}
