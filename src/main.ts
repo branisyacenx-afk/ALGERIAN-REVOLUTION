@@ -10,11 +10,10 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9ba99a);
 scene.fog = new THREE.Fog(0x9ba99a, 520, 1900);
 // Some Android in-app browsers report pointer/orientation media features unreliably.
-const isPortraitTouch = () => window.innerHeight > window.innerWidth && window.innerWidth < 1100;
-// Apply the simulated landscape layout immediately, before the start screen is shown.
-document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
-const viewWidth = () => isPortraitTouch() ? window.innerHeight : window.innerWidth;
-const viewHeight = () => isPortraitTouch() ? window.innerWidth : window.innerHeight;
+// Keep the game in the phone's natural portrait orientation. No CSS rotation or swapped viewport axes.
+const isPortraitTouch = () => false;
+const viewWidth = () => window.innerWidth;
+const viewHeight = () => window.innerHeight;
 const camera = new THREE.PerspectiveCamera(76, viewWidth() / viewHeight(), 0.1, 2200);
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
@@ -900,26 +899,11 @@ function beginGame(): void {
   player.scale.set(1,1,1); $('#hide-button').classList.remove('active'); $('#hide-button').innerHTML = '<span>▣</span><small>احتماء</small>';
   yaw = 0; pitch = -0.10; cameraDistance = 8.4; verticalVelocity = 0; onGround = true;
   configureCampaignStage();
-  document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
+  document.body.classList.remove('portrait-landscape-sim','needs-landscape');
   started = true;
   document.body.classList.add('game-started');
   paused = false;
-  // Android browsers generally allow orientation lock after a user gesture/fullscreen.
-  if (window.matchMedia('(pointer: coarse)').matches) {
-    const rootElement = document.documentElement as HTMLElement & { requestFullscreen?: () => Promise<void> };
-    const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: string) => Promise<void> };
-    const enterLandscape = async () => {
-      try {
-        if (!document.fullscreenElement && rootElement.requestFullscreen) await rootElement.requestFullscreen();
-        await orientation.lock?.('landscape');
-      } catch {
-        // Orientation lock/fullscreen may be unavailable in Android in-app browsers.
-        // Keep the game visible and playable in portrait instead of hiding #app.
-        document.body.classList.remove('needs-landscape');
-      }
-    };
-    void enterLandscape();
-  }
+  // Do not request fullscreen or lock the device orientation; preserve portrait touch layout.
   $('#pause-screen').classList.remove('visible');
   $('#victory-screen').classList.remove('visible');
   startScreen.style.display = 'none';
@@ -1707,8 +1691,6 @@ function animate(): void {
 animate();
 
 function syncViewport(): void {
-  const portrait = isPortraitTouch();
-  document.body.classList.toggle('portrait-landscape-sim', portrait);
   camera.aspect = viewWidth() / viewHeight();
   camera.updateProjectionMatrix();
   renderer.setSize(viewWidth(), viewHeight());
@@ -1718,4 +1700,7 @@ window.addEventListener('resize', syncViewport);
 window.addEventListener('orientationchange', () => window.setTimeout(syncViewport, 120));
 window.visualViewport?.addEventListener('resize', syncViewport);
 syncViewport();
+
+// Explicitly clear legacy rotation flags on startup and after viewport changes.
+document.body.classList.remove('portrait-landscape-sim','needs-landscape');
 updateHud();
