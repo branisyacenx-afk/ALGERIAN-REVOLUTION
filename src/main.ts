@@ -8,14 +8,14 @@ if (!root) throw new Error('Game root not found');
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9ba99a);
-scene.fog = new THREE.Fog(0x9ba99a, 48, 270);
+scene.fog = new THREE.Fog(0x9ba99a, 520, 1900);
 // Some Android in-app browsers report pointer/orientation media features unreliably.
 const isPortraitTouch = () => window.innerHeight > window.innerWidth && window.innerWidth < 1100;
 // Apply the simulated landscape layout immediately, before the start screen is shown.
 document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
 const viewWidth = () => isPortraitTouch() ? window.innerHeight : window.innerWidth;
 const viewHeight = () => isPortraitTouch() ? window.innerWidth : window.innerHeight;
-const camera = new THREE.PerspectiveCamera(76, viewWidth() / viewHeight(), 0.1, 440);
+const camera = new THREE.PerspectiveCamera(76, viewWidth() / viewHeight(), 0.1, 2200);
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
 renderer.setSize(viewWidth(), viewHeight());
@@ -30,7 +30,7 @@ sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);
 scene.add(sun);
 
-const terrain = new THREE.Mesh(new THREE.PlaneGeometry(420, 420, 64, 64), new THREE.MeshStandardMaterial({ color: 0x777b5d, roughness: 1 }));
+const terrain = new THREE.Mesh(new THREE.PlaneGeometry(1800, 1800, 128, 128), new THREE.MeshStandardMaterial({ color: 0x777b5d, roughness: 1 }));
 terrain.rotation.x = -Math.PI / 2;
 terrain.receiveShadow = true;
 scene.add(terrain);
@@ -164,6 +164,123 @@ addStoneOutpost(-13, -39, 0.22);
 addSandbagLine(-5.5, -14, 7, 0.12);
 addSandbagLine(5.2, -31, 6, -0.18);
 addWatchPost(15, -42);
+
+// Vast playable backdrop: distant mountain chains and instanced forest silhouettes.
+// Instancing keeps the expanded 1.8 km landscape lightweight on mobile GPUs.
+const farRidgeMat = new THREE.MeshStandardMaterial({ color: 0x626c60, roughness: 1, flatShading: true });
+const farRidgeMat2 = new THREE.MeshStandardMaterial({ color: 0x73796a, roughness: 1, flatShading: true });
+for (let i = 0; i < 54; i++) {
+  const angle = (i / 54) * Math.PI * 2;
+  const radius = 560 + (i % 5) * 72;
+  const height = 110 + (i % 7) * 24;
+  const mountain = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 6), i % 3 ? farRidgeMat : farRidgeMat2);
+  mountain.position.set(Math.cos(angle) * radius, height * 0.34 - 12, Math.sin(angle) * radius - 24);
+  mountain.scale.set(150 + (i % 4) * 36, height, 120 + (i % 3) * 42);
+  mountain.rotation.y = angle * 0.3;
+  mountain.receiveShadow = true;
+  scene.add(mountain);
+}
+const farTreeGeometry = new THREE.ConeGeometry(1.25, 4.8, 6);
+const farTreeTrunkGeometry = new THREE.CylinderGeometry(0.12, 0.18, 1.55, 5);
+const farTreeMaterials = [
+  new THREE.MeshStandardMaterial({ color: 0x354a37, roughness: 1, flatShading: true }),
+  new THREE.MeshStandardMaterial({ color: 0x43543d, roughness: 1, flatShading: true }),
+  new THREE.MeshStandardMaterial({ color: 0x536047, roughness: 1, flatShading: true })
+];
+const farTrees = new THREE.InstancedMesh(farTreeGeometry, farTreeMaterials[0], 520);
+const farTrunks = new THREE.InstancedMesh(farTreeTrunkGeometry, new THREE.MeshStandardMaterial({ color: 0x51432f, roughness: 1 }), 520);
+const treeDummy = new THREE.Object3D();
+for (let i = 0; i < 520; i++) {
+  const angle = Math.random() * Math.PI * 2;
+  const radius = 100 + Math.random() * 620;
+  const x = Math.cos(angle) * radius;
+  const z = Math.sin(angle) * radius - 40;
+  const h = 0.7 + Math.random() * 1.35;
+  treeDummy.position.set(x, 2.35 * h, z);
+  treeDummy.rotation.set(0, Math.random() * Math.PI * 2, 0);
+  treeDummy.scale.set(h, h, h);
+  treeDummy.updateMatrix();
+  farTrees.setMatrixAt(i, treeDummy.matrix);
+  treeDummy.position.set(x, 0.77 * h, z);
+  treeDummy.scale.set(h, h, h);
+  treeDummy.updateMatrix();
+  farTrunks.setMatrixAt(i, treeDummy.matrix);
+}
+farTrees.instanceMatrix.needsUpdate = true;
+farTrunks.instanceMatrix.needsUpdate = true;
+scene.add(farTrees, farTrunks);
+
+// Detailed tracked armored vehicles: hull, independent track assemblies, road wheels,
+// turret ring, rotating turret, long cannon, hatches, optics and front lamps.
+type TankRig = { group: THREE.Group; turret: THREE.Group; wheels: THREE.Mesh[]; phase: number };
+const tanks: TankRig[] = [];
+function addArmoredTank(x: number, z: number, rotation: number, paint: number, phase: number): void {
+  const tank = new THREE.Group();
+  const hullMat = new THREE.MeshStandardMaterial({ color: paint, roughness: 0.82, metalness: 0.22 });
+  const darkMetal = new THREE.MeshStandardMaterial({ color: 0x252a27, roughness: 0.95, metalness: 0.12 });
+  const edgeMat = new THREE.MeshStandardMaterial({ color: 0x697064, roughness: 0.72, metalness: 0.3 });
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x172b2d, roughness: 0.25, metalness: 0.45 });
+  const hull = new THREE.Mesh(new THREE.BoxGeometry(4.9, 1.15, 7.1), hullMat);
+  hull.position.y = 1.45; hull.castShadow = true; hull.receiveShadow = true; tank.add(hull);
+  const glacis = new THREE.Mesh(new THREE.BoxGeometry(4.65, 0.58, 2.25), hullMat);
+  glacis.position.set(0, 1.83, -2.25); glacis.rotation.x = -0.18; glacis.castShadow = true; tank.add(glacis);
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(4.25, 0.2, 3.6), edgeMat);
+  deck.position.set(0, 2.08, 0.55); deck.castShadow = true; tank.add(deck);
+  const wheels: THREE.Mesh[] = [];
+  for (const side of [-1, 1]) {
+    const track = new THREE.Mesh(new THREE.BoxGeometry(0.72, 1.35, 7.45), darkMetal);
+    track.position.set(side * 2.45, 1.03, 0.02); track.castShadow = true; tank.add(track);
+    for (let j = 0; j < 6; j++) {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.49, 0.49, 0.34, 16), edgeMat);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(side * 2.73, 0.92, -2.72 + j * 1.08);
+      wheel.castShadow = true; tank.add(wheel); wheels.push(wheel);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.37, 12), darkMetal);
+      hub.rotation.z = Math.PI / 2; hub.position.copy(wheel.position); tank.add(hub);
+    }
+    const upperTrack = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.16, 6.9), edgeMat);
+    upperTrack.position.set(side * 2.48, 1.72, 0.02); tank.add(upperTrack);
+    for (let j = 0; j < 4; j++) {
+      const returnRoller = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.4, 10), darkMetal);
+      returnRoller.rotation.z = Math.PI / 2;
+      returnRoller.position.set(side * 2.75, 1.72, -2.35 + j * 1.55); tank.add(returnRoller);
+    }
+  }
+  const turret = new THREE.Group();
+  turret.position.set(0, 2.2, 0.25);
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(1.58, 1.7, 0.28, 24), darkMetal);
+  ring.position.y = 0.05; ring.castShadow = true; turret.add(ring);
+  const turretBody = new THREE.Mesh(new THREE.BoxGeometry(2.9, 1.25, 3.05), hullMat);
+  turretBody.position.set(0, 0.72, 0.05); turretBody.castShadow = true; turretBody.receiveShadow = true; turret.add(turretBody);
+  const turretRoof = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.16, 2.5), edgeMat);
+  turretRoof.position.set(0, 1.42, 0.05); turret.add(turretRoof);
+  const mantlet = new THREE.Mesh(new THREE.SphereGeometry(0.48, 14, 10), darkMetal);
+  mantlet.position.set(0, 0.83, -1.43); mantlet.scale.set(1.2, 0.85, 0.7); turret.add(mantlet);
+  const cannon = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 4.9, 12), darkMetal);
+  cannon.rotation.x = Math.PI / 2; cannon.position.set(0, 0.85, -3.8); cannon.castShadow = true; turret.add(cannon);
+  const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.2, 0.38, 12), edgeMat);
+  muzzle.rotation.x = Math.PI / 2; muzzle.position.set(0, 0.85, -6.25); turret.add(muzzle);
+  const hatch = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.13, 16), darkMetal);
+  hatch.position.set(0.75, 1.55, 0.55); turret.add(hatch);
+  const optics = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.22, 0.35), glassMat);
+  optics.position.set(-0.72, 1.5, -0.5); turret.add(optics);
+  turret.traverse((o) => { if (o instanceof THREE.Mesh) { o.castShadow = true; o.receiveShadow = true; } });
+  tank.add(turret);
+  for (const side of [-1, 1]) {
+    const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.12, 12), new THREE.MeshStandardMaterial({ color: 0xe5d7a1, emissive: 0x5b4d22 }));
+    lamp.rotation.z = Math.PI / 2; lamp.position.set(side * 1.75, 1.72, -3.58); tank.add(lamp);
+    const sideStowage = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.52, 1.1), hullMat);
+    sideStowage.position.set(side * 2.12, 2.0, 2.2); tank.add(sideStowage);
+  }
+  tank.position.set(x, 0, z); tank.rotation.y = rotation;
+  tank.traverse((o) => { if (o instanceof THREE.Mesh) { o.castShadow = true; o.receiveShadow = true; } });
+  scene.add(tank);
+  tanks.push({ group: tank, turret, wheels, phase });
+}
+addArmoredTank(31, -74, -0.38, 0x59614a, 0.3);
+addArmoredTank(-43, -105, 0.52, 0x6a6a55, 2.1);
+addArmoredTank(92, -245, -0.12, 0x565e4b, 1.4);
+
 
 // A prominent Algerian flag anchors the rally point and is built locally (no external asset required).
 const flagCanvas = document.createElement('canvas');
@@ -980,6 +1097,10 @@ function animate(): void {
   radarElapsed += delta;
   if (radarElapsed >= 0.12) { drawRadar(); radarElapsed = 0; }
   marker.position.y = Math.sin(time * 2) * 0.12;
+  for (const tank of tanks) {
+    tank.turret.rotation.y = Math.sin(time * 0.16 + tank.phase) * 0.34;
+    tank.group.position.y = Math.sin(time * 0.8 + tank.phase) * 0.018;
+  }
   ring.rotation.z += delta * 0.65;
   const flagPositions = flagGeometry.attributes.position;
   for(let i=0;i<flagPositions.count;i++){
