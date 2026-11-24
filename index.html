@@ -33,6 +33,25 @@
         </div>
         <div id="look-area" aria-label="منطقة تحريك الكاميرا"></div>
         <div id="interact-hint">APPUYEZ POUR RÉCUPÉRER</div>
+        <div id="mission-cinematic" aria-hidden="true">
+          <div class="cinema-grain"></div><div class="cinema-scan"></div>
+          <div class="cinema-reticle"><i></i><i></i><i></i><i></i></div>
+          <div class="cinema-topline"><span>ALGERIAN REVOLUTION</span><span id="cinema-counter">OPÉRATION 01 / 100</span></div>
+          <div class="cinema-content">
+            <span class="cinema-kicker">DOSSIER DE MISSION · TRANSMISSION DU COMMANDEMENT</span>
+            <div class="cinema-year" id="cinema-year">1954 — AURÈS</div>
+            <h2 id="cinema-title">شرارة نوفمبر · الأوراس</h2>
+            <p id="cinema-description">تبدأ العملية في الممرات الجبلية للأوراس.</p>
+            <div class="cinema-brief">
+              <div><small>القطاع</small><strong id="cinema-sector">جبال الأوراس</strong></div>
+              <div><small>المهمة</small><strong id="cinema-objective">تأمين ممر جبلي</strong></div>
+              <div><small>التوجيه</small><strong id="cinema-plan">استرجع الإمدادات، ثم أمّن الممر.</strong></div>
+            </div>
+            <div class="cinema-countdown"><i></i><span>استعد للدخول إلى ساحة المعركة</span></div>
+            <button id="cinematic-enter" type="button">دخول المعركة الآن ←</button>
+          </div>
+          <div class="cinema-bottom"><span>ARCHIVES DE CAMPAGNE · 1954–1962</span><span>SCÈNE CINÉMATIQUE</span></div>
+        </div>
         <div id="victory-screen" aria-hidden="true"><div class="pause-card victory-card"><span class="eyebrow">حملة التحرير · 100 مرحلة</span><h2 id="victory-heading">اكتملت المرحلة 1 من 100</h2><p id="victory-copy">تم تأمين القطاع. استعد للمهمة التالية في منطقة وزمن مختلفين.</p><div class="victory-stats"><span>الإمدادات<strong>مسترجعة</strong></span><span>التهديدات<strong>تمت إزالتها</strong></span><span>التجمع<strong>تم الوصول</strong></span></div><button id="victory-next">المرحلة التالية ←</button><button id="victory-restart" class="secondary">إعادة المرحلة</button></div></div>
         <div id="pause-screen" aria-hidden="true"><div class="pause-card"><span class="eyebrow">PAUSE</span><h2>Mission suspendue</h2><p>Votre progression est conservée pendant cette session.</p><button id="resume-button">REPRENDRE</button><button id="restart-button" class="secondary">RECOMMENCER</button></div></div>
         <div id="damage-flash" aria-hidden="true"></div><div id="toast" role="status"></div>
