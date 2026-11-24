@@ -445,7 +445,6 @@ function shoot(): void {
         window.setTimeout(() => $('#crosshair').classList.remove('hit'), 220);
         notify('تم تحييد الخصم.');
       }
-    }
   }
   updateHud();
 }
