@@ -257,6 +257,47 @@ function makePerson(color: number, scale = 1): THREE.Group {
 const player = makePerson(0x354c3b, 1);
 player.position.set(0, 0, 9);
 scene.add(player);
+
+// Distinct uniform equipment overlays. These remain visible over either the procedural
+// character or the animated rigged soldier model.
+const uniformLayer = new THREE.Group();
+const algerianKit = new THREE.Group();
+const frenchKit = new THREE.Group();
+function kitMesh(geometry:THREE.BufferGeometry,color:number,position:THREE.Vector3,parent:THREE.Group,scale?:THREE.Vector3):THREE.Mesh {
+  const mesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color,roughness:0.94,metalness:0.02}));
+  mesh.position.copy(position); if(scale) mesh.scale.copy(scale); mesh.castShadow=true; mesh.receiveShadow=true; parent.add(mesh); return mesh;
+}
+function kitStrap(a:THREE.Vector3,b:THREE.Vector3,radius:number,color:number,parent:THREE.Group):void {
+  const delta=b.clone().sub(a);
+  const mesh=kitMesh(new THREE.CylinderGeometry(radius,radius,delta.length(),8),color,a.clone().add(b).multiplyScalar(0.5),parent);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());
+}
+const olive=0x536347, sand=0xc1a879, darkLeather=0x302d25, blueGrey=0x46586b, webbing=0x303a43;
+kitMesh(new THREE.BoxGeometry(0.69,0.63,0.42),olive,new THREE.Vector3(0,1.23,-0.015),algerianKit);
+kitStrap(new THREE.Vector3(-0.31,1.53,-0.24),new THREE.Vector3(0.28,0.93,-0.24),0.045,sand,algerianKit);
+kitStrap(new THREE.Vector3(0.31,1.53,-0.24),new THREE.Vector3(-0.28,0.93,-0.24),0.045,sand,algerianKit);
+for(const x of [-0.22,0,0.22]) {
+  kitMesh(new THREE.BoxGeometry(0.17,0.2,0.12),0x756344,new THREE.Vector3(x,1.12,-0.27),algerianKit);
+  kitMesh(new THREE.BoxGeometry(0.16,0.08,0.13),0x9b8354,new THREE.Vector3(x,1.25,-0.28),algerianKit);
+}
+kitMesh(new THREE.CylinderGeometry(0.12,0.14,0.28,10),0x5d6042,new THREE.Vector3(0.43,0.92,0.12),algerianKit);
+kitMesh(new THREE.TorusGeometry(0.24,0.075,8,18),sand,new THREE.Vector3(0,1.73,0),algerianKit).rotation.x=Math.PI/2;
+kitMesh(new THREE.SphereGeometry(0.25,12,8),0xb9a77e,new THREE.Vector3(0,1.96,0),algerianKit,new THREE.Vector3(1.12,0.52,1.1));
+kitMesh(new THREE.BoxGeometry(0.48,0.08,0.1),darkLeather,new THREE.Vector3(0,0.88,-0.23),algerianKit);
+
+kitMesh(new THREE.BoxGeometry(0.68,0.62,0.42),blueGrey,new THREE.Vector3(0,1.23,-0.02),frenchKit);
+kitStrap(new THREE.Vector3(-0.31,1.54,-0.25),new THREE.Vector3(0.28,0.9,-0.25),0.052,webbing,frenchKit);
+kitStrap(new THREE.Vector3(0.31,1.54,-0.25),new THREE.Vector3(-0.28,0.9,-0.25),0.052,webbing,frenchKit);
+for(const x of [-0.23,0.23]) {
+  kitMesh(new THREE.BoxGeometry(0.18,0.23,0.14),0x34404b,new THREE.Vector3(x,1.12,-0.28),frenchKit);
+  kitMesh(new THREE.BoxGeometry(0.19,0.07,0.15),0x69717a,new THREE.Vector3(x,1.25,-0.29),frenchKit);
+}
+kitMesh(new THREE.CylinderGeometry(0.23,0.24,0.16,12),0x344252,new THREE.Vector3(0,2.02,0),frenchKit);
+kitMesh(new THREE.BoxGeometry(0.34,0.045,0.25),0x202a34,new THREE.Vector3(0,1.98,-0.08),frenchKit);
+kitMesh(new THREE.BoxGeometry(0.08,0.16,0.08),0xc0a15e,new THREE.Vector3(0,1.83,-0.24),frenchKit);
+uniformLayer.add(algerianKit,frenchKit); player.add(uniformLayer);
+algerianKit.visible=true; frenchKit.visible=false;
+
 function setPlayerOutfit(kind: 'algerian' | 'french'): void {
   const palette = kind === 'algerian'
     ? { cloth: 0x526348, trousers: 0x3e4939, wrap: 0xd0bd91 }
@@ -267,8 +308,12 @@ function setPlayerOutfit(kind: 'algerian' | 'french'): void {
     const material = part.material as THREE.MeshStandardMaterial;
     material.color.setHex(palette[role]);
   });
+  algerianKit.visible = kind === 'algerian';
+  frenchKit.visible = kind === 'french';
   if (player.userData.characterModel) tintCharacter(player, kind === 'algerian' ? 0x9aa184 : 0x7f8a9c);
-  notify(kind === 'algerian' ? 'تم اختيار الزي الجزائري التمثيلي.' : 'تم اختيار الزي العسكري الفرنسي التمثيلي.');
+  $('#outfit-algerian').classList.toggle('selected',kind === 'algerian');
+  $('#outfit-french').classList.toggle('selected',kind === 'french');
+  notify(kind === 'algerian' ? 'تم تجهيز الزي الجزائري الميداني مع الحمالات والحقائب وغطاء الرأس.' : 'تم تجهيز الزي العسكري الفرنسي مع القبعة والحمالات والحقائب.');
 }
 const weapon = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.9), new THREE.MeshStandardMaterial({ color: 0x292b28, metalness: 0.45, roughness: 0.65 }));
 weapon.position.set(0.38, 1.18, -0.48);
@@ -618,7 +663,7 @@ document.addEventListener('mousemove', (event) => {
 });
 // Full-screen touch camera: drag anywhere on the playfield, not just the right half.
 // Interactive controls retain their own gestures (joystick, fire, reload, pickup, menus).
-const cameraGestureExcluded = '#mobile-controls, button, input, select, textarea, a, .start-card, #pause-screen, #game-over-screen, #victory-screen';
+const cameraGestureExcluded = '#joystick, .mobile-actions button, button, input, select, textarea, a, .start-card, #pause-screen, #game-over-screen, #victory-screen';
 document.addEventListener('contextmenu', (event) => {
   if (started && event.target instanceof Element && !event.target.closest(cameraGestureExcluded)) event.preventDefault();
 });
@@ -639,14 +684,15 @@ document.addEventListener('pointermove', (event) => {
   const dy = event.clientY - lastTouchY;
   lastTouchX = event.clientX;
   lastTouchY = event.clientY;
-  yaw -= dx * (aiming ? 0.0065 : 0.0085);
-  pitch = THREE.MathUtils.clamp(pitch - dy * (aiming ? 0.0048 : 0.006), -0.72, 0.42);
+  yaw -= dx * (aiming ? 0.0042 : 0.0058);
+  pitch = THREE.MathUtils.clamp(pitch - dy * (aiming ? 0.0034 : 0.0045), -0.68, 0.38);
 }, { passive: false });
 const releaseLook = (event: PointerEvent) => {
   if (lookPointer === event.pointerId) lookPointer = null;
 };
 document.addEventListener('pointerup', releaseLook, true);
 document.addEventListener('pointercancel', releaseLook, true);
+document.addEventListener('visibilitychange', () => { if (document.hidden) { lookPointer = null; releaseJoystick(); stopFiring(); releaseSprint(); } });
 document.addEventListener('keydown', (event) => {
   keys.add(event.code);
   if (event.code === 'Space') event.preventDefault();
@@ -812,11 +858,13 @@ function updateJoystick(event: PointerEvent): void {
   const rect = joystick.getBoundingClientRect();
   const dx = event.clientX - (rect.left + rect.width / 2);
   const dy = event.clientY - (rect.top + rect.height / 2);
-  const max = Math.min(rect.width, rect.height) * 0.31;
-  const length = Math.max(1, Math.hypot(dx, dy));
-  const scale = Math.min(max / length, 1);
-  touchX = (dx * scale) / max;
-  touchY = (dy * scale) / max;
+  const max = Math.min(rect.width, rect.height) * 0.36;
+  const rawLength = Math.hypot(dx, dy);
+  const deadZone = max * 0.12;
+  const length = Math.max(1, rawLength);
+  const normalized = rawLength <= deadZone ? 0 : Math.min((rawLength - deadZone) / (max - deadZone), 1);
+  touchX = rawLength <= deadZone ? 0 : (dx / length) * normalized;
+  touchY = rawLength <= deadZone ? 0 : (dy / length) * normalized;
   stick.style.transform = `translate(${touchX * max}px,${touchY * max}px)`;
 }
 joystick.addEventListener('pointerdown', (event) => {
@@ -830,6 +878,7 @@ joystick.addEventListener('pointermove', (event) => {
 const releaseJoystick = () => { joystickPointer = null; touchX = 0; touchY = 0; stick.style.transform = 'translate(0,0)'; };
 joystick.addEventListener('pointerup', releaseJoystick);
 joystick.addEventListener('pointercancel', releaseJoystick);
+joystick.addEventListener('lostpointercapture', releaseJoystick);
 
 const radarCanvas = $('#radar') as HTMLCanvasElement;
 const radarContext = radarCanvas.getContext('2d');

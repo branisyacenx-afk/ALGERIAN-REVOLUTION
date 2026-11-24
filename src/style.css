@@ -276,3 +276,39 @@ body:not(.game-started) #camera-zoom-controls{display:none}
 
 /* Algerian field identity and stealth action. */
 #hide-button{min-width:66px;height:48px;padding:0 12px;border-radius:14px;border:2px solid #b6d0a0;background:linear-gradient(145deg,#234b32,#14271d);color:#f5f3df;font-size:12px;font-weight:900;box-shadow:0 4px 14px #0008;touch-action:manipulation}#hide-button.active{background:linear-gradient(145deg,#c2a35d,#7d5b27);border-color:#f3dfa4;color:#171b12;box-shadow:0 0 0 4px #d9c17a44,0 0 18px #d9c17a88}#hide-button:active{transform:scale(.95)}
+
+/* Field uniform detail pass: separate silhouette accessories for the two selectable kits. */
+.outfit-picker button.selected{background:linear-gradient(145deg,#c6a66a,#8c713f);color:#142019;border-color:#f1d79a;box-shadow:0 0 0 2px #d9bd7555}
+.outfit-picker button{transition:background .16s,border-color .16s,transform .16s}
+.outfit-picker button:active{transform:scale(.97)}
+/* Rebuilt mobile shooter layout: movement left, action cluster right, clear camera space between. */
+#mobile-controls{left:18px!important;right:18px!important;bottom:18px!important;display:flex!important;justify-content:space-between!important;align-items:flex-end!important;gap:12px!important;pointer-events:none!important;z-index:30!important}
+#joystick{pointer-events:auto!important;flex:0 0 clamp(100px,17vw,138px);width:clamp(100px,17vw,138px)!important;height:clamp(100px,17vw,138px)!important;border:2px solid #e4d6ad99!important;background:radial-gradient(circle,#344739dd,#101a15dd)!important;box-shadow:0 8px 26px #0009,inset 0 0 0 7px #ffffff0a!important;position:relative}
+#joystick:before{content:"";position:absolute;inset:13%;border:1px dashed #e6d5a755;border-radius:50%;pointer-events:none}
+#stick{width:43%!important;height:43%!important;background:radial-gradient(circle at 35% 28%,#eee0bb,#a98c56 72%)!important;border:2px solid #fff3!important;box-shadow:0 4px 12px #0009!important;will-change:transform}
+.mobile-actions{pointer-events:auto!important;display:grid!important;grid-template-columns:repeat(3,54px)!important;grid-template-rows:repeat(2,58px)!important;grid-template-areas:"jump reload aim" "sprint hide fire"!important;gap:7px!important;align-items:center!important;justify-items:center!important;padding:8px!important;border:1px solid #e2d1a044!important;border-radius:19px!important;background:linear-gradient(145deg,#0c1712d9,#17251bd9)!important;box-shadow:0 8px 26px #0009!important;backdrop-filter:blur(8px)}
+.mobile-actions button{position:relative!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:0!important;width:52px!important;height:52px!important;margin:0!important;padding:3px!important;border:1px solid #e5d6b477!important;border-radius:15px!important;background:linear-gradient(145deg,#3b5142,#1c2c22)!important;color:#fff!important;font-size:20px!important;box-shadow:0 3px 9px #0008!important;touch-action:none!important;user-select:none!important;-webkit-user-select:none!important}
+.mobile-actions button small{font-size:9px!important;line-height:1.1!important;color:#f2e6c9!important;font-weight:700!important}
+.mobile-actions #jump-button{grid-area:jump!important}
+.mobile-actions #reload-button{grid-area:reload!important}
+.mobile-actions #aim-button{grid-area:aim!important}
+.mobile-actions #sprint-button{grid-area:sprint!important}
+.mobile-actions #hide-button{grid-area:hide!important;min-width:0!important}
+.mobile-actions #fire-button{grid-area:fire!important;width:66px!important;height:66px!important;border-radius:19px!important;border:2px solid #ffe1a3!important;background:radial-gradient(circle at 32% 25%,#e27b48,#922e25 78%)!important;font-size:14px!important;font-weight:900!important;box-shadow:0 0 0 3px #24160eaa,0 5px 16px #000b!important}
+.mobile-actions #fire-button span{font-size:13px!important}
+.mobile-actions #fire-button.active{transform:scale(.94)!important;filter:brightness(1.3)!important;box-shadow:0 0 0 4px #ffd27b66,0 0 22px #ff6c28!important}
+.mobile-actions #aim-button.active,.mobile-actions #hide-button.active,.mobile-actions #sprint-button.active{background:linear-gradient(145deg,#c4a25e,#79602e)!important;color:#151b14!important;border-color:#ffe0a0!important}
+.mobile-actions #aim-button.active small,.mobile-actions #hide-button.active small{color:#151b14!important}
+.mobile-actions #reload-button.reloading{animation:reload-turn 1s linear infinite!important}
+#mobile-controls button:active{filter:brightness(1.2)}
+#camera-zoom-controls{right:18px!important;top:42%!important;transform:translateY(-50%)!important;gap:7px!important}
+#camera-zoom-controls button{width:38px!important;height:38px!important;border-radius:12px!important;background:#111e17e8!important;border:1px solid #e5d4a777!important;font-size:22px!important}
+#pickup-button{left:50%!important;top:60%!important;z-index:36!important}
+@media(max-width:900px){
+ #mobile-controls{left:12px!important;right:12px!important;bottom:12px!important}
+ #mobile-actions{gap:5px!important}
+ .mobile-actions{grid-template-columns:repeat(3,48px)!important;grid-template-rows:repeat(2,52px)!important;gap:5px!important;padding:6px!important}
+ .mobile-actions button{width:46px!important;height:46px!important;border-radius:13px!important}
+ .mobile-actions #fire-button{width:58px!important;height:58px!important}
+ #joystick{flex-basis:clamp(92px,16vw,122px);width:clamp(92px,16vw,122px)!important;height:clamp(92px,16vw,122px)!important}
+}
