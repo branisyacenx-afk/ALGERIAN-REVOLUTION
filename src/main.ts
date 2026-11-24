@@ -461,19 +461,20 @@ algerianKit.visible=true; frenchKit.visible=false;
 function setPlayerOutfit(kind: 'algerian' | 'french'): void {
   const palette = kind === 'algerian'
     ? { cloth: 0x526348, trousers: 0x3e4939, wrap: 0xd0bd91 }
-    : { cloth: 0x34465a, trousers: 0x303a48, wrap: 0x465365 };
+    : { cloth: 0x667052, trousers: 0x4d5841, wrap: 0x827c62 };
   player.traverse((part) => {
     if (!(part instanceof THREE.Mesh) || !part.userData.outfitRole) return;
     const role = part.userData.outfitRole as keyof typeof palette;
     const material = part.material as THREE.MeshStandardMaterial;
     material.color.setHex(palette[role]);
   });
+  tacticalDisguise = kind === 'french';
   algerianKit.visible = kind === 'algerian';
   frenchKit.visible = kind === 'french';
-  if (player.userData.characterModel) tintCharacter(player, kind === 'algerian' ? 0x9aa184 : 0x7f8a9c);
+  if (player.userData.characterModel) tintCharacter(player, kind === 'algerian' ? 0x9aa184 : 0x788064);
   $('#outfit-algerian').classList.toggle('selected',kind === 'algerian');
   $('#outfit-french').classList.toggle('selected',kind === 'french');
-  notify(kind === 'algerian' ? 'Équipement algérien sélectionné.' : 'Équipement français sélectionné.');
+  notify(kind === 'algerian' ? 'تم اختيار زي مقاتل جبهة التحرير.' : 'تم تفعيل الزي المموّه؛ انخفض مدى كشف الدوريات.');
 }
 const weapon = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.9), new THREE.MeshStandardMaterial({ color: 0x292b28, metalness: 0.45, roughness: 0.65 }));
 weapon.position.set(0.38, 1.18, -0.48);
@@ -665,6 +666,7 @@ scene.add(supplyCache);
 
 const keys = new Set<string>();
 let soundEnabled = localStorage.getItem('algerian-revolution-sound') !== 'off';
+let tacticalDisguise = false;
 let audioContext: AudioContext | null = null;
 function playSfx(kind: 'shot'|'reload'|'hit'|'pickup'|'damage'): void {
   if (!soundEnabled) return;
@@ -928,10 +930,12 @@ function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
   }
 }
 function launchMissionBriefing(): void {
-  // Reliability-first entry: start the playable scene directly. The briefing
-  // overlay is intentionally skipped until the start flow is verified stable.
-  closeMissionBriefing();
-  beginGame();
+  const cinematic = document.getElementById('mission-cinematic');
+  if (!cinematic) { beginGame(); return; }
+  cinematic.classList.add('visible');
+  cinematic.setAttribute('aria-hidden','false');
+  const menu = document.getElementById('start-screen');
+  if (menu) { menu.style.pointerEvents = 'none'; menu.setAttribute('aria-hidden','true'); }
 }
 function closeMissionBriefing(): void {
   // Keep this critical transition independent from the shared DOM helper.
@@ -1723,7 +1727,8 @@ function animate(): void {
     enemies.forEach((enemy, index) => {
       if (enemy.parent === null) return;
       const distance = enemy.position.distanceTo(player.position);
-      if (!playerHidden && distance < 22 && distance > 3.0) {
+      const detectionDistance = tacticalDisguise ? 14 : 22;
+      if (!playerHidden && distance < detectionDistance && distance > 3.0) {
         const toward = player.position.clone().sub(enemy.position).setY(0).normalize();
         enemy.position.addScaledVector(toward, delta * 0.82);
         setCharacterAnimation(enemy, 'Walk');
@@ -1740,7 +1745,8 @@ function animate(): void {
         setCharacterAnimation(enemy, 'Walk');
       }
       enemy.userData.fireCooldown = Math.max(0, (enemy.userData.fireCooldown as number) - delta);
-      const enemyRange = enemy.userData.role === 'sniper' ? 78 : 32;
+      const baseEnemyRange = enemy.userData.role === 'sniper' ? 78 : 32;
+      const enemyRange = tacticalDisguise ? baseEnemyRange * 0.72 : baseEnemyRange;
       if (!playerHidden && distance >= 7 && distance < enemyRange && enemy.userData.fireCooldown <= 0) {
         enemy.lookAt(player.position.x, enemy.position.y, player.position.z);
         enemy.rotation.y += Math.PI;
