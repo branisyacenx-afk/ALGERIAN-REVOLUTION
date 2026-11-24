@@ -446,7 +446,11 @@ async function loadSoldierCharacters(): Promise<void> {
       }
     });
     attachSoldierModel(player, 0x9aa184);
-    for (const enemy of enemies) attachSoldierModel(enemy, 0x858b7b);
+    const factionTints = [0x858b7b, 0x777f70, 0x9a927c, 0x6f796d, 0x8d8877, 0x727a80];
+    for (const [index, enemy] of enemies.entries()) {
+      attachSoldierModel(enemy, factionTints[index % factionTints.length]);
+      enemy.scale.setScalar(0.91 + (index % 3) * 0.045);
+    }
     enemyMeshes.length = 0;
     enemies.forEach((enemy) => enemy.traverse((part) => {
       if (part instanceof THREE.Mesh) enemyMeshes.push(part);
@@ -518,7 +522,8 @@ let lastTouchX = 0;
 let lastTouchY = 0;
 let yaw = 0;
 let pitch = -0.10;
-let cameraDistance = 7.2;
+let cameraDistance = 8.4;
+let cameraMode: 'behind' | 'front' = 'behind';
 let aiming = false;
 let crouching = false;
 let playerHidden = false;
@@ -684,8 +689,12 @@ document.addEventListener('pointermove', (event) => {
   const dy = event.clientY - lastTouchY;
   lastTouchX = event.clientX;
   lastTouchY = event.clientY;
-  yaw -= dx * (aiming ? 0.0042 : 0.0058);
-  pitch = THREE.MathUtils.clamp(pitch - dy * (aiming ? 0.0034 : 0.0045), -0.68, 0.38);
+  // The game canvas is rotated 90° on portrait phones; remap physical finger motion
+  // into the landscape game axes so horizontal swipes always turn the view naturally.
+  const dragX = isPortraitTouch() ? dy : dx;
+  const dragY = isPortraitTouch() ? -dx : dy;
+  yaw -= dragX * (aiming ? 0.0048 : 0.0065);
+  pitch = THREE.MathUtils.clamp(pitch - dragY * (aiming ? 0.0038 : 0.0052), -0.82, 0.48);
 }, { passive: false });
 const releaseLook = (event: PointerEvent) => {
   if (lookPointer === event.pointerId) lookPointer = null;
@@ -731,8 +740,18 @@ document.addEventListener('keydown', (event) => {
 $('#reload-button').addEventListener('click', reloadWeapon);
 $('#interact-hint').addEventListener('click', interact);
 $('#pickup-button').addEventListener('click', interact);
-$('#camera-zoom-in').addEventListener('click', () => { cameraDistance = Math.max(4.8, cameraDistance - 0.7); notify('تم تقريب الكاميرا.'); });
-$('#camera-zoom-out').addEventListener('click', () => { cameraDistance = Math.min(11, cameraDistance + 0.8); notify('تم إبعاد الكاميرا.'); });
+$('#camera-zoom-in').addEventListener('click', () => { cameraDistance = Math.max(3.8, cameraDistance - 0.65); notify('تم تقريب الكاميرا.'); });
+$('#camera-zoom-out').addEventListener('click', () => { cameraDistance = Math.min(14, cameraDistance + 0.8); notify('تم إبعاد الكاميرا.'); });
+$('#camera-mode-toggle').addEventListener('click', () => {
+  cameraMode = cameraMode === 'behind' ? 'front' : 'behind';
+  $('#camera-mode-toggle').textContent = cameraMode === 'behind' ? 'أمام' : 'خلف';
+  notify(cameraMode === 'behind' ? 'الكاميرا خلف الشخصية: ترى طريقك أمامك.' : 'الكاميرا أمام الشخصية: ترى وجه الجندي واتجاهه.');
+});
+$('#camera-reset').addEventListener('click', () => {
+  cameraMode = 'behind'; cameraDistance = 8.4; yaw = 0; pitch = -0.10;
+  $('#camera-mode-toggle').textContent = 'أمام';
+  notify('أعدنا الكاميرا إلى وضعها الطبيعي خلف الشخصية.');
+});
 window.addEventListener('blur', () => keys.clear());
 
 function getAimedEnemy(): THREE.Group | undefined {
@@ -1043,18 +1062,19 @@ function animate(): void {
     });
 
     // Shoulder camera framing keeps the soldier left of the screen reticle.
-    const desiredDistance = aiming ? 4.6 : cameraDistance;
+    const desiredDistance = aiming ? Math.min(cameraDistance, 4.8) : cameraDistance;
     camera.fov = THREE.MathUtils.lerp(camera.fov, aiming ? 58 : 76, 1 - Math.exp(-delta * 9));
     camera.updateProjectionMatrix();
-    const shoulder = aiming ? 1.12 : 0.82;
+    const shoulder = aiming ? 1.05 : 0.68;
+    const viewSide = cameraMode === 'front' ? -1 : 1;
     const cameraOffset = new THREE.Vector3(
-      Math.sin(yaw) * desiredDistance + Math.cos(yaw) * shoulder,
-      (aiming ? 2.35 : 3.25) + pitch * (aiming ? 1.15 : 1.8),
-      Math.cos(yaw) * desiredDistance - Math.sin(yaw) * shoulder
+      Math.sin(yaw) * desiredDistance * viewSide + Math.cos(yaw) * shoulder,
+      (aiming ? 2.15 : 2.85) + pitch * (aiming ? 1.35 : 2.0),
+      Math.cos(yaw) * desiredDistance * viewSide - Math.sin(yaw) * shoulder
     );
-    const cameraTarget = player.position.clone().add(new THREE.Vector3(0, crouching ? 0.92 : aiming ? 1.52 : 1.38, 0));
+    const cameraTarget = player.position.clone().add(new THREE.Vector3(0, crouching ? 0.92 : aiming ? 1.52 : 1.34, 0));
     const aimForward = new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw));
-    const lookTarget = cameraTarget.clone().addScaledVector(aimForward, aiming ? 16 : 8);
+    const lookTarget = cameraTarget.clone().addScaledVector(aimForward, (cameraMode === 'front' ? -1 : 1) * (aiming ? 16 : 8));
     camera.position.lerp(cameraTarget.clone().add(cameraOffset), 1 - Math.pow(0.00008, delta));
     camera.lookAt(lookTarget);
     const aimed = getAimedEnemy();
