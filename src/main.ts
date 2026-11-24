@@ -606,7 +606,7 @@ function animate(): void {
     const cacheDistance = player.position.distanceTo(supplyCache.position);
     const nearCache = !suppliesCollected && cacheDistance < 5.2;
     $('#interact-hint').classList.toggle('visible', nearCache);
-    const pickupButton = $('#pickup-button');
+    const pickupButton = $('#pickup-button') as HTMLButtonElement;
     pickupButton.classList.toggle('visible', nearCache);
     pickupButton.disabled = !nearCache;
     pickupButton.textContent = cacheDistance < 4.4 ? 'التقط صندوق الإمدادات' : `اقترب من الصندوق · ${Math.ceil(cacheDistance)}م`;
