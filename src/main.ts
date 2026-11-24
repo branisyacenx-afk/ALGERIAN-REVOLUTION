@@ -313,7 +313,7 @@ function setPlayerOutfit(kind: 'algerian' | 'french'): void {
   if (player.userData.characterModel) tintCharacter(player, kind === 'algerian' ? 0x9aa184 : 0x7f8a9c);
   $('#outfit-algerian').classList.toggle('selected',kind === 'algerian');
   $('#outfit-french').classList.toggle('selected',kind === 'french');
-  notify(kind === 'algerian' ? 'تم تجهيز الزي الجزائري الميداني مع الحمالات والحقائب وغطاء الرأس.' : 'تم تجهيز الزي العسكري الفرنسي مع القبعة والحمالات والحقائب.');
+  notify(kind === 'algerian' ? 'Équipement algérien sélectionné.' : 'Équipement français sélectionné.');
 }
 const weapon = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.9), new THREE.MeshStandardMaterial({ color: 0x292b28, metalness: 0.45, roughness: 0.65 }));
 weapon.position.set(0.38, 1.18, -0.48);
@@ -775,7 +775,7 @@ function shoot(): void {
     return;
   }
   ammo--;
-  if (playerHidden) { crouching = false; playerHidden = false; player.scale.y = 1; $('#hide-button').classList.remove('active'); $('#hide-button').textContent = 'اختباء'; notify('Votre tir a révélé votre position. Changez de couverture.'); }
+  if (playerHidden) { crouching = false; playerHidden = false; player.scale.y = 1; $('#hide-button').classList.remove('active'); $('#hide-button').innerHTML = '<span>▣</span><small>COUVERT</small>'; notify('Votre tir a révélé votre position. Changez de couverture.'); }
   // Shoot through the screen reticle so camera aim and hit detection agree.
   // The same centered reticle drives aim feedback and hit detection.
   const target = getAimedEnemy();
@@ -1051,10 +1051,10 @@ function animate(): void {
         updateHud();
         if (health === 0) {
           gameOver = true; started = false;
-          $('#start-button').textContent = 'إعادة المحاولة';
+          $('#start-button').textContent = 'RÉESSAYER';
           document.body.classList.remove('game-started');
           startScreen.style.display = 'grid';
-          notify('انتهت المحاولة. يمكنك البدء من جديد.');
+          notify('Mission échouée. Vous pouvez réessayer.');
         }
       }
       enemy.position.y = 0;
