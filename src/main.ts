@@ -980,13 +980,17 @@ function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
 }
 function requestLandscapeMode(): void {
   // Browsers only permit orientation locking in supported fullscreen/PWA contexts.
-  // Failure is intentionally non-blocking: the game must still start.
-  const orientation = screen.orientation;
-  const enterFullscreen = document.documentElement.requestFullscreen?.();
-  if (enterFullscreen && orientation && typeof orientation.lock === 'function') {
-    void enterFullscreen.then(() => orientation.lock('landscape')).catch((error) => {
-      console.info('Landscape lock is unavailable in this browser context:', error);
-    });
+  // Any unsupported API or permission failure must never block the start action.
+  try {
+    const orientation = screen.orientation;
+    const enterFullscreen = document.documentElement.requestFullscreen?.();
+    if (enterFullscreen && orientation && typeof orientation.lock === 'function') {
+      void enterFullscreen.then(() => orientation.lock('landscape')).catch((error) => {
+        console.info('Landscape lock is unavailable in this browser context:', error);
+      });
+    }
+  } catch (error) {
+    console.info('Fullscreen/orientation lock is unavailable:', error);
   }
 }
 function launchMissionBriefing(): void {
