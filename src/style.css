@@ -757,3 +757,114 @@ body.portrait-landscape-sim #app {
     min-height: 0 !important;
     max-height: none !important;
   }
+
+
+/* LANDSCAPE COMMAND HUB — unified layout for the complete mobile experience. */
+body.portrait-landscape-sim #app{
+  position:fixed!important;top:0!important;left:0!important;
+  width:100dvh!important;height:100vw!important;
+  max-width:none!important;max-height:none!important;
+  transform-origin:top left!important;
+  transform:rotate(90deg) translateY(-100%)!important;
+  overflow:hidden!important;
+}
+body.portrait-landscape-sim #game-root,
+body.portrait-landscape-sim #hud{position:absolute!important;inset:0!important;width:100%!important;height:100%!important}
+body.portrait-landscape-sim #start-screen{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  display:grid!important;place-items:center!important;padding:10px!important;overflow:hidden!important;
+  background:radial-gradient(ellipse at 72% 30%,#9c783022,transparent 42%),linear-gradient(120deg,#050b08f5,#101c16f2 55%,#080f0cf5)!important;
+}
+body.portrait-landscape-sim .main-menu-shell{
+  width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;
+  display:grid!important;grid-template-columns:clamp(150px,20%,205px) minmax(0,1fr)!important;
+  grid-template-rows:minmax(0,1fr)!important;border:1px solid #d9bd805c!important;border-radius:14px!important;
+  overflow:hidden!important;box-shadow:0 18px 65px #000b!important;
+}
+body.portrait-landscape-sim .menu-sidebar{
+  display:flex!important;flex-direction:column!important;align-items:stretch!important;
+  padding:13px 10px!important;overflow:hidden!important;border-bottom:0!important;
+}
+body.portrait-landscape-sim .menu-brand{display:flex!important;justify-content:flex-start!important;padding:2px 2px 12px!important}
+body.portrait-landscape-sim .menu-brand>div,
+body.portrait-landscape-sim .menu-profile>div:last-child,
+body.portrait-landscape-sim .menu-sidebar-footer{display:block!important}
+body.portrait-landscape-sim .menu-emblem{width:32px!important;height:32px!important;font-size:18px!important}
+body.portrait-landscape-sim .menu-brand strong{font-size:12px!important}
+body.portrait-landscape-sim .menu-brand small{font-size:7px!important}
+body.portrait-landscape-sim .menu-profile{display:flex!important;justify-content:flex-start!important;padding:11px 1px!important}
+body.portrait-landscape-sim .profile-avatar{width:32px!important;height:32px!important;font-size:16px!important}
+body.portrait-landscape-sim .menu-profile strong{font-size:10px!important}
+body.portrait-landscape-sim .menu-profile small{font-size:8px!important}
+body.portrait-landscape-sim .menu-nav{display:grid!important;grid-template-columns:1fr!important;gap:5px!important;overflow:visible!important}
+body.portrait-landscape-sim .menu-tab{
+  display:flex!important;flex-direction:row!important;justify-content:flex-start!important;gap:8px!important;
+  padding:9px 8px!important;font-size:10px!important;white-space:nowrap!important;border-radius:7px!important;
+}
+body.portrait-landscape-sim .menu-tab span{width:17px!important;font-size:14px!important}
+body.portrait-landscape-sim .menu-main{
+  min-width:0!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;
+  padding:12px 17px 8px!important;
+}
+body.portrait-landscape-sim .menu-topbar{padding-bottom:8px!important}
+body.portrait-landscape-sim .menu-topbar h1{font-size:21px!important}
+body.portrait-landscape-sim .menu-eyebrow{font-size:8px!important}
+body.portrait-landscape-sim .menu-top-meta span{padding:5px 8px!important;font-size:8px!important}
+body.portrait-landscape-sim .menu-panel{padding:10px 0 7px!important}
+body.portrait-landscape-sim .campaign-hero{
+  grid-template-columns:minmax(0,1.1fr) minmax(190px,.9fr)!important;min-height:175px!important;
+  border-radius:10px!important;
+}
+body.portrait-landscape-sim .campaign-hero-copy{padding:14px 17px!important}
+body.portrait-landscape-sim .campaign-hero h2{font-size:clamp(23px,3vw,34px)!important;margin:7px 0 4px!important}
+body.portrait-landscape-sim .campaign-hero p{font-size:10px!important;line-height:1.6!important}
+body.portrait-landscape-sim .campaign-stats{gap:20px!important;margin:9px 0!important}
+body.portrait-landscape-sim .campaign-stats strong{font-size:16px!important}
+body.portrait-landscape-sim .campaign-stats small{font-size:8px!important}
+body.portrait-landscape-sim .primary-launch{width:auto!important;min-width:205px!important;padding:8px 11px!important;border-radius:7px!important}
+body.portrait-landscape-sim .primary-launch b{font-size:10px!important}
+body.portrait-landscape-sim .primary-launch small{font-size:8px!important}
+body.portrait-landscape-sim .hero-map{display:block!important;min-height:175px!important}
+body.portrait-landscape-sim .menu-section-heading{margin:10px 0 6px!important}
+body.portrait-landscape-sim .menu-section-heading h3{font-size:12px!important}
+body.portrait-landscape-sim .next-operation-card{grid-template-columns:38px minmax(0,1fr) minmax(100px,.45fr)!important;padding:8px 10px!important;gap:9px!important}
+body.portrait-landscape-sim .operation-number{width:34px!important;height:34px!important;font-size:13px!important}
+body.portrait-landscape-sim .operation-details strong{font-size:11px!important}
+body.portrait-landscape-sim .operation-details p{font-size:8px!important}
+body.portrait-landscape-sim .operation-progress{grid-column:auto!important;display:block!important}
+body.portrait-landscape-sim .menu-chapter-strip{grid-template-columns:repeat(4,minmax(0,1fr))!important;margin-top:7px!important;gap:5px!important}
+body.portrait-landscape-sim .menu-chapter-strip>div{padding:6px!important}
+body.portrait-landscape-sim .menu-chapter-strip span{font-size:8px!important}
+body.portrait-landscape-sim .menu-chapter-strip small{font-size:7px!important}
+body.portrait-landscape-sim .menu-chapter-strip .more-chapters{display:none!important}
+body.portrait-landscape-sim .menu-footer{padding-top:5px!important;font-size:7px!important}
+body.portrait-landscape-sim .panel-heading h2{font-size:20px!important;margin:5px 0!important}
+body.portrait-landscape-sim .panel-heading p{font-size:9px!important}
+body.portrait-landscape-sim .dossier-card{padding:13px 16px!important}
+body.portrait-landscape-sim .loadout-options,
+body.portrait-landscape-sim .archive-columns{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+body.portrait-landscape-sim .loadout-choice{padding:12px!important}
+body.portrait-landscape-sim .settings-list label{padding:9px 12px!important}
+
+/* Mission briefing: command dossier with clear hierarchy and reachable action. */
+#mission-cinematic{background:radial-gradient(ellipse at 78% 48%,#687b5a30,transparent 38%),linear-gradient(115deg,#050b08f7,#101c16f2 58%,#10180ff5)!important}
+#mission-cinematic:after{content:"";position:absolute;right:5%;top:17%;width:min(34vw,360px);aspect-ratio:1;border:1px solid #d8bd8030;border-radius:50%;box-shadow:0 0 0 28px #d8bd8009,0 0 0 58px #d8bd8007,inset 0 0 65px #d8bd8010;pointer-events:none}
+.cinema-content{width:min(720px,78vw)!important;margin:clamp(70px,12vh,112px) 8% 0 auto!important}
+.cinema-kicker{padding:7px 10px;border:1px solid #d8bd7d55;border-radius:4px;background:#d8bd7d0c;font-size:9px!important}
+.cinema-year{font-size:15px!important}
+.cinema-content h2{font-size:clamp(25px,4vw,46px)!important}
+.cinema-brief{gap:8px!important}
+.cinema-brief>div{border-radius:7px!important;background:linear-gradient(145deg,#18251ddd,#0b130fdd)!important;padding:11px 12px!important}
+#cinematic-enter{min-width:220px;padding:13px 20px!important;border-radius:7px!important;font-size:13px!important;box-shadow:0 7px 24px #0008,0 0 0 3px #d8bd8018!important}
+#cinematic-enter:focus-visible,.menu-tab:focus-visible,.primary-launch:focus-visible{outline:2px solid #fff0bd!important;outline-offset:3px!important}
+@media(max-height:520px){
+ body.portrait-landscape-sim .menu-main{padding-top:7px!important}
+ body.portrait-landscape-sim .campaign-hero{min-height:145px!important}
+ body.portrait-landscape-sim .hero-map{min-height:145px!important}
+ body.portrait-landscape-sim .campaign-hero-copy{padding:10px 13px!important}
+ .cinema-content{margin-top:65px!important}
+ .cinema-content h2{font-size:25px!important;margin:5px 0!important}
+ .cinema-content>p{margin:4px 0 10px!important;line-height:1.45!important}
+ .cinema-brief>div{padding:7px 9px!important}
+ .cinema-countdown{margin:8px 0!important}
+}
