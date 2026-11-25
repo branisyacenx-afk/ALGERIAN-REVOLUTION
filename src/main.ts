@@ -985,7 +985,7 @@ function requestLandscapeMode(): void {
     const orientation = screen.orientation as ScreenOrientation & { lock?: (mode: 'landscape') => Promise<void> };
     const enterFullscreen = document.documentElement.requestFullscreen?.();
     if (enterFullscreen && orientation && typeof orientation.lock === 'function') {
-      void enterFullscreen.then(() => orientation.lock('landscape')).catch((error) => {
+      void enterFullscreen.then(() => orientation.lock?.('landscape')).catch((error) => {
         console.info('Landscape lock is unavailable in this browser context:', error);
       });
     }
