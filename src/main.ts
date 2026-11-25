@@ -756,6 +756,64 @@ function buildChapterLandmark(index:number, sector:{x:number;z:number}):void {
   g.position.set(sector.x,0,sector.z);scene.add(g);
 }
 campaignSectors.forEach((sector,index)=>buildChapterLandmark(index,sector));
+
+// Detailed Algerian village/casbah architecture: plastered stone walls, parapets,
+// recessed windows, wooden shutters, doors, balconies and rooftop details.
+function addAlgerianBuilding(x:number,z:number,w:number,h:number,d:number,rotation=0,style=0):void {
+  const g=new THREE.Group();
+  const plaster=new THREE.MeshStandardMaterial({color:style%3===0?0xc0b08c:style%3===1?0xa99a7d:0x8e8878,roughness:1});
+  const trim=new THREE.MeshStandardMaterial({color:0x6f6048,roughness:1});
+  const wood=new THREE.MeshStandardMaterial({color:0x493628,roughness:.95});
+  const dark=new THREE.MeshStandardMaterial({color:0x292a25,roughness:1});
+  const wall=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),plaster); wall.position.y=h/2; wall.castShadow=true; wall.receiveShadow=true; g.add(wall);
+  const roof=new THREE.Mesh(new THREE.BoxGeometry(w+.35,.28,d+.35),trim); roof.position.y=h+.12; roof.castShadow=true; g.add(roof);
+  const parapet=new THREE.Mesh(new THREE.BoxGeometry(w+.25,.55,.22),plaster); parapet.position.set(0,h+.48,-d/2+.12); g.add(parapet);
+  const floors=Math.max(1,Math.floor((h-1.2)/2.25));
+  for(let floor=0;floor<floors;floor++){
+    const y=1.35+floor*2.15;
+    for(const side of [-1,1]){
+      const wx=side*w*.27;
+      const recess=new THREE.Mesh(new THREE.BoxGeometry(.92,1.12,.12),dark); recess.position.set(wx,y,d/2+.035); g.add(recess);
+      const frame=new THREE.Mesh(new THREE.BoxGeometry(1.12,1.32,.16),trim); frame.position.set(wx,y,d/2+.09); g.add(frame);
+      const shutter=new THREE.Mesh(new THREE.BoxGeometry(.32,1.05,.12),wood); shutter.position.set(wx-.48,y,d/2+.17); g.add(shutter);
+      const shutter2=shutter.clone(); shutter2.position.x=wx+.48; g.add(shutter2);
+      if(floor>0){
+        const balcony=new THREE.Mesh(new THREE.BoxGeometry(1.55,.12,.58),trim); balcony.position.set(wx,y-.72,d/2+.32); g.add(balcony);
+        for(let k=0;k<5;k++){const rail=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.55,6),wood);rail.position.set(wx-.65+k*.325,y-.43,d/2+.54);g.add(rail);}
+      }
+    }
+  }
+  const door=new THREE.Mesh(new THREE.BoxGeometry(1.05,2.05,.16),wood);door.position.set(0,1.03,d/2+.12);g.add(door);
+  const arch=new THREE.Mesh(new THREE.TorusGeometry(.55,.11,7,16,Math.PI),trim);arch.position.set(0,2.03,d/2+.13);arch.rotation.z=Math.PI;g.add(arch);
+  const awning=new THREE.Mesh(new THREE.BoxGeometry(1.65,.12,.8),wood);awning.position.set(0,2.35,d/2+.42);g.add(awning);
+  for(let i=0;i<3;i++){const vent=new THREE.Mesh(new THREE.BoxGeometry(.55,.12,.12),trim);vent.position.set(-w*.28+i*w*.28,h+.3,-d/2+.3);g.add(vent);}
+  g.position.set(x,0,z);g.rotation.y=rotation;g.traverse(o=>{if(o instanceof THREE.Mesh){o.castShadow=true;o.receiveShadow=true;}});scene.add(g);
+  coverZones.push({position:new THREE.Vector3(x,0,z),radius:Math.max(w,d)*.72});
+}
+function addVillageStreet(sector:{x:number;z:number},urban:boolean):void {
+  const count=urban?10:6;
+  for(let i=0;i<count;i++){
+    const row=Math.floor(i/5), col=i%5;
+    const x=sector.x-31+col*15+(row%2)*4;
+    const z=sector.z-54-row*15;
+    const width=urban?7+(i%3)*1.5:6+(i%2)*1.5;
+    const height=urban?6+(i%4)*1.6:4.2+(i%3)*.8;
+    addAlgerianBuilding(x,z,width,height,urban?7:6,(i%2?-.08:.06),i);
+    if(i%3===0){
+      const chimney=new THREE.Mesh(new THREE.BoxGeometry(.65,1.4,.65),new THREE.MeshStandardMaterial({color:0x786c58,roughness:1}));
+      chimney.position.set(x+width*.28,height+1,z);chimney.castShadow=true;scene.add(chimney);
+    }
+  }
+  // Narrow dusty street with raised stone edges and scattered market crates.
+  const street=new THREE.Mesh(new THREE.PlaneGeometry(12,urban?82:62),new THREE.MeshStandardMaterial({color:0x887b63,roughness:1}));
+  street.rotation.x=-Math.PI/2;street.position.set(sector.x+4,.035,sector.z-48);street.receiveShadow=true;scene.add(street);
+  for(let i=0;i<5;i++){
+    const crate=new THREE.Mesh(new THREE.BoxGeometry(.9,.8,.9),new THREE.MeshStandardMaterial({color:0x59452f,roughness:1}));
+    crate.position.set(sector.x-7+(i%2)*15,.4,sector.z-24-i*11);crate.castShadow=true;scene.add(crate);
+  }
+}
+campaignSectors.forEach((sector,index)=>addVillageStreet(sector,campaignChapters[index].kind==='city'));
+
 for (const [index, sector] of campaignSectors.entries()) {
   addStoneOutpost(sector.x + 22, sector.z - 30, index * 0.17);
   addSandbagLine(sector.x - 13, sector.z - 24, 7 + (index % 3), -0.12);
@@ -1507,6 +1565,17 @@ function drawRadar(): void {
 type GrenadeState = { mesh: THREE.Group; velocity: THREE.Vector3; fuse: number };
 const grenades: GrenadeState[] = [];
 type TankShell = { mesh: THREE.Mesh; velocity: THREE.Vector3; life: number };
+
+type TracerState={line:THREE.Line;slug:THREE.Mesh;from:THREE.Vector3;to:THREE.Vector3;life:number;duration:number};
+const activeTracers:TracerState[]=[];
+function createBulletTracer(from:THREE.Vector3,to:THREE.Vector3,color:number,duration=.18):void {
+  const geometry=new THREE.BufferGeometry().setFromPoints([from,to]);
+  const line=new THREE.Line(geometry,new THREE.LineBasicMaterial({color,transparent:true,opacity:.88}));
+  const slug=new THREE.Mesh(new THREE.SphereGeometry(.055,6,5),new THREE.MeshBasicMaterial({color}));
+  slug.position.copy(from);scene.add(line,slug);
+  activeTracers.push({line,slug,from:from.clone(),to:to.clone(),life:duration,duration});
+}
+
 const tankShells: TankShell[] = [];
 let tankFireClock = 4.5;
 const battleAllies: THREE.Group[] = [];
@@ -1626,6 +1695,13 @@ function animate(): void {
   aircraft.rotation.z = Math.sin(time * .12) * .06;
   propeller.rotation.z += delta * 32;
   convoy.forEach((truck,i)=>{truck.position.x += Math.sin(time*.22+i*.6)*delta*.32;truck.position.z += delta*.42;});
+  activeTracers.forEach((tracer,index)=>{
+    tracer.life-=delta;
+    const progress=THREE.MathUtils.clamp(1-tracer.life/tracer.duration,0,1);
+    tracer.slug.position.lerpVectors(tracer.from,tracer.to,progress);
+    (tracer.line.material as THREE.LineBasicMaterial).opacity=Math.max(0,tracer.life/tracer.duration)*.88;
+    if(tracer.life<=0){scene.remove(tracer.line,tracer.slug);tracer.line.geometry.dispose();(tracer.line.material as THREE.Material).dispose();tracer.slug.geometry.dispose();(tracer.slug.material as THREE.Material).dispose();activeTracers.splice(index,1);}
+  });
   tankFireClock -= delta;
   if(started&&!paused&&!gameOver&&tankFireClock<=0&&tanks.length){
     const rig=tanks[Math.floor(time/8)%tanks.length];
@@ -1661,7 +1737,7 @@ function animate(): void {
       grenades.splice(index,1);
     }
   });
-  battleAllies.forEach((ally)=>{
+  ([...allies,...battleAllies]).forEach((ally)=>{
     if(!started||paused||gameOver)return;
     // Squad members stay spread across the local defensive line and engage targets from cover.
     setCharacterAnimation(ally, 'Idle');
@@ -1670,8 +1746,7 @@ function animate(): void {
     if(foe&&foe.position.distanceTo(ally.position)<38&&ally.userData.squadFire<=0){
       ally.lookAt(foe.position.x,ally.position.y,foe.position.z);ally.rotation.y+=Math.PI;
       const a=ally.position.clone().add(new THREE.Vector3(0,1.25,0)),b=foe.position.clone().add(new THREE.Vector3(0,1.1,0));
-      const geo=new THREE.BufferGeometry().setFromPoints([a,b]);const beam=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xc8d6a0,transparent:true,opacity:.62}));scene.add(beam);
-      window.setTimeout(()=>{scene.remove(beam);geo.dispose();(beam.material as THREE.Material).dispose();},90);
+      createBulletTracer(a,b,0xc8d6a0,.2);
       ally.userData.squadFire=1.7+Math.random()*1.1;
       if(Math.random()>.42){foe.userData.health=Math.max(0,(foe.userData.health as number)-1);if((foe.userData.health as number)<=0){foe.userData.dead=true;awardCombatPoint();const ix=enemies.indexOf(foe);if(ix>=0)enemies.splice(ix,1);foe.rotation.z=1.0;window.setTimeout(()=>{scene.remove(foe);foe.clear();},900);}}
     }
@@ -1799,10 +1874,7 @@ function animate(): void {
         enemy.rotation.y += Math.PI;
         const from = enemy.position.clone().add(new THREE.Vector3(0, 1.35, 0));
         const to = player.position.clone().add(new THREE.Vector3(0, 1.0, 0));
-        const lineGeometry = new THREE.BufferGeometry().setFromPoints([from, to]);
-        const line = new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({color: enemy.userData.role === 'sniper' ? 0xff5c42 : 0xd8a76c,transparent:true,opacity:0.7}));
-        scene.add(line);
-        window.setTimeout(() => { scene.remove(line); lineGeometry.dispose(); (line.material as THREE.Material).dispose(); }, 120);
+        createBulletTracer(from,to,enemy.userData.role==='sniper'?0xff5c42:0xd8a76c,enemy.userData.role==='sniper'?.28:.16);
         enemy.userData.fireCooldown = enemy.userData.role === 'sniper' ? 4.2 + Math.random() * 1.5 : 2.1 + Math.random() * 1.1;
         if (damageCooldown <= 0 && Math.random() > 0.35) {
           health = Math.max(0, health - 5);
