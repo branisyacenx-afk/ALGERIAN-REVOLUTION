@@ -1191,3 +1191,206 @@ body{position:fixed;inset:0}
  .menu-chapter-strip{flex:0 0 34px!important;min-height:34px!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important;margin:0!important}
  .menu-chapter-strip .more-chapters{display:none!important}
 }
+
+
+/* =========================================================
+   MOBILE-FIRST COMMAND LOBBY — complete menu layout refresh
+   Scroll is intentionally enabled for all menu content.
+   ========================================================= */
+#start-screen{
+  position:fixed!important;inset:0!important;display:block!important;
+  width:100%!important;height:100dvh!important;min-height:0!important;
+  padding:clamp(10px,2.2vw,26px)!important;
+  overflow-x:hidden!important;overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch!important;overscroll-behavior-y:contain!important;
+  touch-action:pan-y!important;align-items:stretch!important;justify-items:stretch!important;
+  background:
+    radial-gradient(ellipse at 78% 12%,rgba(174,139,75,.18),transparent 36%),
+    linear-gradient(135deg,rgba(5,12,9,.94),rgba(10,19,14,.97) 48%,rgba(7,13,10,.96))!important;
+  backdrop-filter:blur(10px)!important;
+  scrollbar-width:thin;scrollbar-color:#b99a62 #101914;
+}
+#start-screen::-webkit-scrollbar,.menu-main::-webkit-scrollbar{width:6px}
+#start-screen::-webkit-scrollbar-thumb,.menu-main::-webkit-scrollbar-thumb{background:#b99a6288;border-radius:8px}
+#start-screen .main-menu-shell{
+  display:grid!important;grid-template-columns: minmax(190px,235px) minmax(0,1fr)!important;
+  grid-template-rows:minmax(0,1fr)!important;
+  width:min(1440px,100%)!important;height:auto!important;min-height:calc(100dvh - 2 * clamp(10px,2.2vw,26px))!important;
+  max-height:none!important;margin:0 auto!important;overflow:visible!important;
+  border:1px solid #c6a66a55!important;border-radius:18px!important;
+  background:linear-gradient(145deg,#111d17f7,#0a130ff7)!important;
+  box-shadow:0 28px 90px #000a!important;
+}
+#start-screen .menu-sidebar{
+  position:relative!important;inset:auto!important;height:auto!important;min-height:100%!important;
+  display:flex!important;flex-direction:column!important;align-items:stretch!important;
+  padding:24px 16px!important;overflow:visible!important;
+  background:linear-gradient(180deg,#1b2b21,#101a14 65%,#0d1511)!important;
+  border-left:1px solid #c6a66a3b!important;border-bottom:0!important;
+}
+#start-screen .menu-brand{display:flex!important;padding:4px 2px 20px!important}
+#start-screen .menu-profile{display:flex!important;padding:18px 2px!important}
+#start-screen .menu-sidebar-footer{display:block!important}
+#start-screen .menu-nav{
+  display:grid!important;grid-template-columns:1fr!important;gap:7px!important;
+  height:auto!important;overflow:visible!important;padding:0!important;
+}
+#start-screen .menu-tab{
+  display:flex!important;justify-content:flex-start!important;min-width:0!important;
+  min-height:46px!important;height:auto!important;padding:11px 12px!important;
+  border:1px solid transparent!important;border-radius:9px!important;
+  background:transparent!important;color:#d1d5c9!important;font-size:13px!important;
+  white-space:normal!important;text-align:right!important;
+}
+#start-screen .menu-tab span{display:inline!important;width:22px!important;font-size:17px!important}
+#start-screen .menu-tab.active{
+  color:#fff0ce!important;background:linear-gradient(90deg,#c6a66a2b,#c6a66a0b)!important;
+  border-color:#c6a66a88!important;box-shadow:inset -3px 0 #d9bc7d!important;
+}
+#start-screen .menu-main{
+  position:relative!important;inset:auto!important;display:flex!important;flex-direction:column!important;
+  width:auto!important;height:auto!important;min-width:0!important;min-height:0!important;max-height:none!important;
+  margin:0!important;padding:24px clamp(16px,3vw,42px) 26px!important;
+  overflow:visible!important;overscroll-behavior:contain!important;touch-action:pan-y!important;
+  background:radial-gradient(ellipse at 80% 10%,#b38d4814,transparent 42%),linear-gradient(145deg,#111d17,#0b1410 75%)!important;
+}
+#start-screen .menu-topbar{display:flex!important;min-height:72px!important;padding-bottom:17px!important}
+#start-screen .menu-footer{display:flex!important;flex-wrap:wrap!important;gap:10px 18px!important;margin-top:24px!important}
+#start-screen .menu-panel{
+  display:none!important;position:relative!important;inset:auto!important;
+  width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;
+  flex:0 0 auto!important;margin:0!important;padding:22px 0 12px!important;
+  overflow:visible!important;animation:menu-panel-in .22s ease both!important;
+}
+#start-screen .menu-panel.active{display:block!important}
+#start-screen .campaign-hero{
+  grid-template-columns:minmax(0,1.1fr) minmax(190px,.9fr)!important;
+  min-height:270px!important;height:auto!important;max-height:none!important;
+  border-radius:15px!important;
+}
+#start-screen .campaign-hero-copy{padding:clamp(18px,2.4vw,30px)!important}
+#start-screen .hero-map{display:block!important;min-height:270px!important;height:auto!important}
+#start-screen .menu-section-heading{margin:22px 0 10px!important}
+#start-screen .next-operation-card{min-height:100px!important;height:auto!important}
+#start-screen .menu-chapter-strip{grid-template-columns:repeat(4,minmax(0,1fr))!important;min-height:72px!important;height:auto!important}
+#start-screen .menu-chapter-strip .more-chapters{display:flex!important}
+#start-screen .panel-heading{margin-bottom:18px!important}
+#start-screen .dossier-card,#start-screen .loadout-choice,#start-screen .equipment-note,
+#start-screen .settings-list label,#start-screen .archive-columns>div{border-radius:12px!important}
+#start-screen button,#start-screen select{touch-action:manipulation}
+#start-screen button:focus-visible,#start-screen select:focus-visible{outline:2px solid #e2c486!important;outline-offset:3px}
+
+/* Compact portrait phones: stacked cards, full-width readable controls, vertical swipe. */
+@media(max-width:760px) and (orientation:portrait){
+  #start-screen{
+    padding:0!important;display:block!important;overflow-x:hidden!important;overflow-y:auto!important;
+    height:100dvh!important;min-height:100dvh!important;border-radius:0!important;
+  }
+  #start-screen .main-menu-shell{
+    display:flex!important;flex-direction:column!important;gap:0!important;
+    width:100%!important;height:auto!important;min-height:100dvh!important;
+    max-height:none!important;border:0!important;border-radius:0!important;overflow:visible!important;
+  }
+  #start-screen .menu-sidebar{
+    position:sticky!important;top:0!important;z-index:20!important;
+    display:block!important;flex:none!important;min-height:0!important;height:auto!important;
+    padding:12px 14px 9px!important;background:rgba(12,22,16,.97)!important;
+    border:0!important;border-bottom:1px solid #c6a66a55!important;
+    backdrop-filter:blur(14px)!important;
+  }
+  #start-screen .menu-brand{display:flex!important;gap:9px!important;padding:0 0 10px!important;border:0!important}
+  #start-screen .menu-emblem{width:34px!important;height:34px!important;font-size:19px!important}
+  #start-screen .menu-brand strong{font-size:13px!important}
+  #start-screen .menu-profile,#start-screen .menu-sidebar-footer{display:none!important}
+  #start-screen .menu-nav{
+    display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
+    gap:7px!important;width:100%!important;height:auto!important;overflow-x:auto!important;overflow-y:hidden!important;
+    padding:2px 0 5px!important;scrollbar-width:none!important;touch-action:pan-x!important;
+  }
+  #start-screen .menu-nav::-webkit-scrollbar{display:none!important}
+  #start-screen .menu-tab{
+    flex:0 0 auto!important;min-height:40px!important;height:40px!important;
+    padding:8px 12px!important;gap:6px!important;font-size:11px!important;
+  }
+  #start-screen .menu-tab span{font-size:14px!important}
+  #start-screen .menu-main{
+    display:flex!important;flex:1 0 auto!important;flex-direction:column!important;
+    width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;
+    padding:14px 13px 32px!important;overflow:visible!important;
+  }
+  #start-screen .menu-topbar{display:flex!important;min-height:58px!important;padding:2px 0 12px!important}
+  #start-screen .menu-topbar h1{font-size:22px!important}
+  #start-screen .menu-eyebrow{font-size:8px!important}
+  #start-screen .menu-top-meta{gap:5px!important}
+  #start-screen .menu-top-meta span{font-size:8px!important;padding:6px 8px!important}
+  #start-screen .menu-panel{padding:14px 0 8px!important;overflow:visible!important}
+  #start-screen .campaign-hero{
+    display:flex!important;flex-direction:column!important;min-height:0!important;height:auto!important;
+    max-height:none!important;overflow:hidden!important;
+  }
+  #start-screen .campaign-hero-copy{padding:18px 17px!important}
+  #start-screen .hero-kicker{font-size:8px!important}
+  #start-screen .campaign-hero h2{font-size:29px!important;margin:7px 0!important}
+  #start-screen .campaign-hero p{font-size:11px!important;line-height:1.8!important}
+  #start-screen .campaign-stats{gap:22px!important;margin:14px 0!important}
+  #start-screen .campaign-stats strong{font-size:17px!important}
+  #start-screen .campaign-stats small{font-size:8px!important}
+  #start-screen .primary-launch{width:100%!important;min-width:0!important;min-height:58px!important;margin-top:8px!important}
+  #start-screen .hero-map{min-height:190px!important;height:190px!important}
+  #start-screen .menu-section-heading{margin:19px 0 9px!important}
+  #start-screen .next-operation-card{
+    display:grid!important;grid-template-columns:42px minmax(0,1fr)!important;
+    gap:10px!important;padding:13px!important;min-height:0!important;
+  }
+  #start-screen .operation-progress{grid-column:1/-1!important;width:100%!important}
+  #start-screen .menu-chapter-strip{
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;margin-top:10px!important;
+  }
+  #start-screen .menu-chapter-strip>div{min-height:58px!important;padding:10px!important}
+  #start-screen .menu-chapter-strip .more-chapters{grid-column:1/-1!important;min-height:40px!important}
+  #start-screen .panel-heading h2{font-size:24px!important}
+  #start-screen .dossier-card{padding:16px!important}
+  #start-screen .dossier-facts{grid-template-columns:1fr!important;gap:7px!important}
+  #start-screen .dossier-facts>div{padding:9px!important}
+  #start-screen .panel-action{width:100%!important;min-height:48px!important}
+  #start-screen .loadout-options{grid-template-columns:1fr!important;gap:10px!important}
+  #start-screen .loadout-choice{min-height:125px!important;padding:14px!important}
+  #start-screen .equipment-note{gap:7px!important;padding:13px!important}
+  #start-screen .settings-list{grid-template-columns:1fr!important;gap:9px!important}
+  #start-screen .settings-list label{min-height:66px!important;padding:12px!important}
+  #start-screen .settings-list label b{font-size:12px!important}
+  #start-screen .settings-list label small{font-size:10px!important}
+  #start-screen .settings-list select{max-width:48%!important;font-size:11px!important}
+  #start-screen .settings-tip{font-size:10px!important;line-height:1.8!important}
+  #start-screen .archive-columns{grid-template-columns:1fr!important;gap:10px!important}
+  #start-screen .archive-columns>div{padding:14px!important}
+  #start-screen .archive-columns h3{font-size:14px!important}
+  #start-screen .archive-columns p{font-size:12px!important;line-height:1.9!important}
+  #start-screen .menu-footer{font-size:8px!important;justify-content:space-between!important}
+}
+/* Landscape phone/tablet: keep the lobby dense but let content scroll vertically. */
+@media(max-width:900px) and (orientation:landscape){
+  #start-screen{padding:5px!important;overflow-y:auto!important;overflow-x:hidden!important}
+  #start-screen .main-menu-shell{
+    display:flex!important;flex-direction:column!important;width:100%!important;height:auto!important;
+    min-height:calc(100dvh - 10px)!important;max-height:none!important;overflow:visible!important;
+  }
+  #start-screen .menu-sidebar{
+    position:sticky!important;top:0!important;z-index:20!important;display:block!important;
+    flex:none!important;height:auto!important;min-height:0!important;padding:5px 9px!important;
+    background:rgba(12,22,16,.97)!important;border:0!important;border-bottom:1px solid #c6a66a55!important;
+  }
+  #start-screen .menu-brand,#start-screen .menu-profile,#start-screen .menu-sidebar-footer{display:none!important}
+  #start-screen .menu-nav{
+    display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
+    overflow-x:auto!important;overflow-y:hidden!important;gap:5px!important;padding:0!important;
+  }
+  #start-screen .menu-tab{flex:1 0 auto!important;min-height:34px!important;height:34px!important;padding:5px 8px!important;font-size:10px!important}
+  #start-screen .menu-main{position:relative!important;inset:auto!important;width:100%!important;height:auto!important;min-height:0!important;overflow:visible!important;padding:8px 12px 20px!important}
+  #start-screen .menu-topbar,#start-screen .menu-footer{display:flex!important}
+  #start-screen .menu-topbar{min-height:42px!important;padding-bottom:7px!important}
+  #start-screen .menu-panel{padding:8px 0!important}
+  #start-screen .campaign-hero{min-height:180px!important;grid-template-columns:minmax(0,1.2fr) minmax(150px,.8fr)!important}
+  #start-screen .hero-map{min-height:180px!important}
+}
