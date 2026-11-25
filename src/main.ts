@@ -1066,11 +1066,12 @@ $('#outfit-algerian').addEventListener('click', () => setPlayerOutfit('algerian'
 $('#outfit-french').addEventListener('click', () => setPlayerOutfit('french'));
 $('#start-button').addEventListener('click', () => {
   try {
-    launchMissionBriefing();
+    requestLandscapeMode();
+    closeMissionBriefing();
+    beginGame();
   } catch (error) {
     console.error('Mission start failed:', error);
-    closeMissionBriefing();
-    try { beginGame(); } catch (fallbackError) { console.error('Direct game start failed:', fallbackError); notify('تعذر بدء المهمة. أعد تحميل الصفحة وحاول مجدداً.'); }
+    notify('تعذر بدء المهمة. أعد تحميل الصفحة وحاول مجدداً.');
   }
 });
 $('#cinematic-enter').addEventListener('click', () => { closeMissionBriefing(); beginGame(); });
