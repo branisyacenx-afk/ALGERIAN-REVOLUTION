@@ -35,11 +35,14 @@ if (!root) throw new Error('Game root not found');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9ba99a);
 scene.fog = new THREE.FogExp2(0x8f8a70, 0.00115);
-// Some Android in-app browsers report pointer/orientation media features unreliably.
-// Keep the game in the phone's natural portrait orientation. No CSS rotation or swapped viewport axes.
-const isPortraitTouch = () => false;
-const viewWidth = () => window.innerWidth;
-const viewHeight = () => window.innerHeight;
+// Present the complete game in landscape on portrait-held touch phones.
+// The CSS rotates the app shell; Three.js must use the swapped logical viewport.
+const isPortraitTouch = () => window.matchMedia('(pointer: coarse)').matches && window.innerHeight > window.innerWidth;
+const viewWidth = () => isPortraitTouch() ? window.innerHeight : window.innerWidth;
+const viewHeight = () => isPortraitTouch() ? window.innerWidth : window.innerHeight;
+function syncOrientationLayout(): void {
+  document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
+}
 const camera = new THREE.PerspectiveCamera(76, viewWidth() / viewHeight(), 0.1, 2200);
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
@@ -1010,7 +1013,8 @@ function beginGame(): void {
   }
   document.getElementById('pause-screen')?.classList.remove('visible');
   document.getElementById('victory-screen')?.classList.remove('visible');
-  document.body.classList.remove('portrait-landscape-sim','needs-landscape');
+  syncOrientationLayout();
+  document.body.classList.remove('needs-landscape');
   document.body.classList.add('game-started');
   started = true;
   paused = false;
@@ -1854,6 +1858,7 @@ function animate(): void {
 animate();
 
 function syncViewport(): void {
+  syncOrientationLayout();
   camera.aspect = viewWidth() / viewHeight();
   camera.updateProjectionMatrix();
   renderer.setSize(viewWidth(), viewHeight());
@@ -1864,6 +1869,6 @@ window.addEventListener('orientationchange', () => window.setTimeout(syncViewpor
 window.visualViewport?.addEventListener('resize', syncViewport);
 syncViewport();
 
-// Explicitly clear legacy rotation flags on startup and after viewport changes.
-document.body.classList.remove('portrait-landscape-sim','needs-landscape');
+// Keep the landscape presentation active on portrait-held phones.
+syncOrientationLayout();
 updateHud();
