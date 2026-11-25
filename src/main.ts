@@ -35,14 +35,9 @@ if (!root) throw new Error('Game root not found');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9ba99a);
 scene.fog = new THREE.FogExp2(0x8f8a70, 0.00115);
-// Present the complete game in landscape on portrait-held touch phones.
-// The CSS rotates the app shell; Three.js must use the swapped logical viewport.
-const isPortraitTouch = () => window.innerHeight > window.innerWidth && (navigator.maxTouchPoints > 0 || 'ontouchstart' in window);
-const viewWidth = () => isPortraitTouch() ? window.innerHeight : window.innerWidth;
-const viewHeight = () => isPortraitTouch() ? window.innerWidth : window.innerHeight;
-function syncOrientationLayout(): void {
-  document.body.classList.toggle('portrait-landscape-sim', isPortraitTouch());
-}
+// Use the real browser viewport. Landscape is provided by device/PWA orientation, not CSS rotation.
+const viewWidth = () => window.innerWidth;
+const viewHeight = () => window.innerHeight;
 const camera = new THREE.PerspectiveCamera(76, viewWidth() / viewHeight(), 0.1, 2200);
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
@@ -983,6 +978,17 @@ function resetEnemies(count = 4, base = new THREE.Vector3(0,0,-25)): void {
     enemy.traverse((part) => { if (part instanceof THREE.Mesh) enemyMeshes.push(part); });
   }
 }
+function requestLandscapeMode(): void {
+  // Browsers only permit orientation locking in supported fullscreen/PWA contexts.
+  // Failure is intentionally non-blocking: the game must still start.
+  const orientation = screen.orientation;
+  const enterFullscreen = document.documentElement.requestFullscreen?.();
+  if (enterFullscreen && orientation && typeof orientation.lock === 'function') {
+    void enterFullscreen.then(() => orientation.lock('landscape')).catch((error) => {
+      console.info('Landscape lock is unavailable in this browser context:', error);
+    });
+  }
+}
 function launchMissionBriefing(): void {
   const cinematic = document.getElementById('mission-cinematic');
   if (!cinematic) { beginGame(); return; }
@@ -1013,7 +1019,6 @@ function beginGame(): void {
   }
   document.getElementById('pause-screen')?.classList.remove('visible');
   document.getElementById('victory-screen')?.classList.remove('visible');
-  syncOrientationLayout();
   document.body.classList.remove('needs-landscape');
   document.body.classList.add('game-started');
   started = true;
@@ -1210,12 +1215,8 @@ document.addEventListener('pointermove', (event) => {
   const dy = event.clientY - lastTouchY;
   lastTouchX = event.clientX;
   lastTouchY = event.clientY;
-  // The game canvas is rotated 90° on portrait phones; remap physical finger motion
-  // into the landscape game axes so horizontal swipes always turn the view naturally.
-  const dragX = isPortraitTouch() ? dy : dx;
-  const dragY = isPortraitTouch() ? -dx : dy;
-  yaw += dragX * (aiming ? 0.0052 : 0.0072);
-  pitch = THREE.MathUtils.clamp(pitch + dragY * (aiming ? 0.0038 : 0.0050), -0.72, 0.38);
+  yaw += dx * (aiming ? 0.0052 : 0.0072);
+  pitch = THREE.MathUtils.clamp(pitch + dy * (aiming ? 0.0038 : 0.0050), -0.72, 0.38);
 }, { passive: false });
 const releaseLook = (event: PointerEvent) => {
   if (lookPointer === event.pointerId) lookPointer = null;
@@ -1444,8 +1445,8 @@ function updateJoystick(event: PointerEvent): void {
   // The whole app is rotated 90° on portrait phones. Pointer coordinates are
   // still reported in physical screen axes, so convert them back to the
   // joystick's unrotated local axes before calculating movement.
-  const dx = isPortraitTouch() ? screenDy : screenDx;
-  const dy = isPortraitTouch() ? -screenDx : screenDy;
+  const dx = screenDx;
+  const dy = screenDy;
   const max = Math.min(rect.width, rect.height) * 0.36;
   const rawLength = Math.hypot(dx, dy);
   const deadZone = max * 0.12;
@@ -1858,7 +1859,6 @@ function animate(): void {
 animate();
 
 function syncViewport(): void {
-  syncOrientationLayout();
   camera.aspect = viewWidth() / viewHeight();
   camera.updateProjectionMatrix();
   renderer.setSize(viewWidth(), viewHeight());
@@ -1870,5 +1870,4 @@ window.visualViewport?.addEventListener('resize', syncViewport);
 syncViewport();
 
 // Keep the landscape presentation active on portrait-held phones.
-syncOrientationLayout();
 updateHud();
