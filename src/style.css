@@ -726,8 +726,7 @@ body.game-started #mobile-controls{display:flex!important}
 /* Force the entire experience (menu, briefing, HUD and battlefield) into landscape.
    On portrait-held Android browsers, rotate one common app shell and swap the
    logical renderer dimensions so touch coordinates and the camera stay aligned. */
-@media (orientation: portrait) and (pointer: coarse) {
-  body.portrait-landscape-sim #app {
+body.portrait-landscape-sim #app {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
@@ -758,4 +757,3 @@ body.game-started #mobile-controls{display:flex!important}
     min-height: 0 !important;
     max-height: none !important;
   }
-}
