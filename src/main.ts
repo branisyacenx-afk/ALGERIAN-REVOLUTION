@@ -982,7 +982,7 @@ function requestLandscapeMode(): void {
   // Browsers only permit orientation locking in supported fullscreen/PWA contexts.
   // Any unsupported API or permission failure must never block the start action.
   try {
-    const orientation = screen.orientation;
+    const orientation = screen.orientation as ScreenOrientation & { lock?: (mode: 'landscape') => Promise<void> };
     const enterFullscreen = document.documentElement.requestFullscreen?.();
     if (enterFullscreen && orientation && typeof orientation.lock === 'function') {
       void enterFullscreen.then(() => orientation.lock('landscape')).catch((error) => {
