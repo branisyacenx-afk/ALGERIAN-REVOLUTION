@@ -722,3 +722,40 @@ body.game-started #mobile-controls{display:flex!important}
  #mobile-controls{bottom:5px!important;left:7px!important;right:7px!important}
  #camera-zoom-controls{right:7px!important;top:39%!important}
 }
+
+/* Force the entire experience (menu, briefing, HUD and battlefield) into landscape.
+   On portrait-held Android browsers, rotate one common app shell and swap the
+   logical renderer dimensions so touch coordinates and the camera stay aligned. */
+@media (orientation: portrait) and (pointer: coarse) {
+  body.portrait-landscape-sim #app {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100dvh !important;
+    height: 100vw !important;
+    max-width: none !important;
+    max-height: none !important;
+    transform-origin: top left !important;
+    transform: rotate(90deg) translateY(-100%) !important;
+    overflow: hidden !important;
+  }
+  body.portrait-landscape-sim #game-root,
+  body.portrait-landscape-sim #hud {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  body.portrait-landscape-sim #start-screen {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  body.portrait-landscape-sim .main-menu-shell {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+}
