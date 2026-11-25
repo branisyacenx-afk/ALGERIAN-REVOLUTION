@@ -37,7 +37,7 @@ scene.background = new THREE.Color(0x9ba99a);
 scene.fog = new THREE.FogExp2(0x8f8a70, 0.00115);
 // Present the complete game in landscape on portrait-held touch phones.
 // The CSS rotates the app shell; Three.js must use the swapped logical viewport.
-const isPortraitTouch = () => window.matchMedia('(pointer: coarse)').matches && window.innerHeight > window.innerWidth;
+const isPortraitTouch = () => window.innerHeight > window.innerWidth && (navigator.maxTouchPoints > 0 || 'ontouchstart' in window);
 const viewWidth = () => isPortraitTouch() ? window.innerHeight : window.innerWidth;
 const viewHeight = () => isPortraitTouch() ? window.innerWidth : window.innerHeight;
 function syncOrientationLayout(): void {
