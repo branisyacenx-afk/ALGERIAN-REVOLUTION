@@ -868,3 +868,47 @@ body.portrait-landscape-sim .settings-list label{padding:9px 12px!important}
  .cinema-brief>div{padding:7px 9px!important}
  .cinema-countdown{margin:8px 0!important}
 }
+
+
+/* Touch scrolling repair: allow the menu to scroll instead of trapping swipes. */
+body.portrait-landscape-sim #start-screen{
+  display:block!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior-y:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-y!important;
+  place-items:initial!important;
+}
+body.portrait-landscape-sim .main-menu-shell{
+  height:auto!important;
+  min-height:100%!important;
+  max-height:none!important;
+  align-items:stretch!important;
+  overflow:visible!important;
+}
+body.portrait-landscape-sim .menu-main{
+  height:100%!important;
+  min-height:0!important;
+  max-height:100%!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-y!important;
+  scrollbar-width:thin!important;
+  scrollbar-color:#b99a62 #17221b!important;
+  padding-bottom:28px!important;
+}
+body.portrait-landscape-sim .menu-sidebar{
+  min-height:100%!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-y!important;
+}
+body.portrait-landscape-sim .menu-panel{min-height:min-content!important}
+body.portrait-landscape-sim #start-screen *,
+body.portrait-landscape-sim .menu-main *{overscroll-behavior:contain}
+body.portrait-landscape-sim #start-screen button,
+body.portrait-landscape-sim .menu-tab{touch-action:manipulation!important}
