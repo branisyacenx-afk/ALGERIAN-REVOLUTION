@@ -912,3 +912,139 @@ body.portrait-landscape-sim #start-screen *,
 body.portrait-landscape-sim .menu-main *{overscroll-behavior:contain}
 body.portrait-landscape-sim #start-screen button,
 body.portrait-landscape-sim .menu-tab{touch-action:manipulation!important}
+
+
+/* PHONE-FIRST LANDSCAPE MENU: one fixed screen, no scrolling or hidden controls. */
+body.portrait-landscape-sim #start-screen{
+  position:absolute!important;inset:0!important;display:block!important;
+  overflow:hidden!important;padding:7px!important;touch-action:manipulation!important;
+}
+body.portrait-landscape-sim .main-menu-shell{
+  width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;
+  display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:38px 44px minmax(0,1fr)!important;gap:5px!important;
+  overflow:hidden!important;align-items:stretch!important;
+}
+body.portrait-landscape-sim .menu-sidebar{display:contents!important}
+body.portrait-landscape-sim .menu-brand{
+  grid-row:1!important;grid-column:1!important;display:flex!important;align-items:center!important;
+  justify-content:flex-start!important;gap:8px!important;padding:0 7px!important;
+  border:1px solid #c6a66a55!important;border-radius:8px!important;background:#101b15eF!important;
+}
+body.portrait-landscape-sim .menu-brand>div{display:block!important}
+body.portrait-landscape-sim .menu-emblem{width:27px!important;height:27px!important;font-size:15px!important}
+body.portrait-landscape-sim .menu-brand strong{font-size:10px!important;line-height:1.1!important}
+body.portrait-landscape-sim .menu-brand small{font-size:6px!important;letter-spacing:1px!important}
+body.portrait-landscape-sim .menu-profile,
+body.portrait-landscape-sim .menu-sidebar-footer{display:none!important}
+body.portrait-landscape-sim .menu-nav{
+  grid-row:2!important;grid-column:1!important;display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:5px!important;
+  min-width:0!important;overflow:hidden!important;
+}
+body.portrait-landscape-sim .menu-tab{
+  min-width:0!important;min-height:40px!important;display:flex!important;
+  flex-direction:row!important;align-items:center!important;justify-content:center!important;
+  gap:5px!important;padding:5px 3px!important;border:1px solid #c6a66a55!important;
+  border-radius:8px!important;background:#17251ddd!important;color:#eee5d2!important;
+  font-size:clamp(9px,1.35vw,12px)!important;white-space:nowrap!important;
+}
+body.portrait-landscape-sim .menu-tab span{width:auto!important;font-size:14px!important}
+body.portrait-landscape-sim .menu-tab.active{background:#c6a66a!important;color:#172018!important;border-color:#f1d99e!important}
+body.portrait-landscape-sim .menu-main{
+  grid-row:3!important;grid-column:1!important;min-width:0!important;min-height:0!important;
+  height:100%!important;max-height:100%!important;display:grid!important;
+  grid-template-rows:0 minmax(0,1fr) 0!important;padding:0!important;
+  overflow:hidden!important;touch-action:manipulation!important;
+}
+body.portrait-landscape-sim .menu-topbar,
+body.portrait-landscape-sim .menu-footer{display:none!important}
+body.portrait-landscape-sim .menu-panel{
+  display:none!important;min-width:0!important;min-height:0!important;height:100%!important;
+  max-height:100%!important;padding:0!important;margin:0!important;overflow:hidden!important;
+}
+body.portrait-landscape-sim .menu-panel.active{
+  display:flex!important;flex-direction:column!important;justify-content:center!important;gap:7px!important;
+}
+body.portrait-landscape-sim .campaign-hero{
+  flex:0 0 auto!important;min-height:0!important;height:clamp(118px,39vh,158px)!important;
+  max-height:158px!important;grid-template-columns:minmax(0,1.15fr) minmax(120px,.85fr)!important;
+  overflow:hidden!important;border-radius:9px!important;
+}
+body.portrait-landscape-sim .campaign-hero-copy{min-width:0!important;padding:9px 13px!important}
+body.portrait-landscape-sim .hero-kicker{font-size:7px!important}
+body.portrait-landscape-sim .campaign-hero h2{font-size:clamp(19px,3.1vw,28px)!important;margin:3px 0!important}
+body.portrait-landscape-sim .campaign-hero p{font-size:clamp(8px,1.2vw,10px)!important;line-height:1.35!important;margin:3px 0!important}
+body.portrait-landscape-sim .campaign-stats{gap:14px!important;margin:5px 0!important}
+body.portrait-landscape-sim .campaign-stats strong{font-size:13px!important}
+body.portrait-landscape-sim .campaign-stats small{font-size:7px!important}
+body.portrait-landscape-sim .primary-launch{
+  min-width:0!important;width:min(100%,230px)!important;min-height:34px!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  gap:8px!important;margin:4px 0 0!important;padding:5px 9px!important;
+}
+body.portrait-landscape-sim .primary-launch b{font-size:10px!important}
+body.portrait-landscape-sim .primary-launch small{font-size:7px!important}
+body.portrait-landscape-sim .hero-map{display:block!important;min-height:0!important;height:100%!important}
+body.portrait-landscape-sim .menu-section-heading{flex:0 0 23px!important;min-height:23px!important;margin:0!important}
+body.portrait-landscape-sim .menu-section-heading h3{font-size:10px!important;margin:0!important}
+body.portrait-landscape-sim .menu-section-heading>div>span,
+body.portrait-landscape-sim .section-status{font-size:7px!important}
+body.portrait-landscape-sim .next-operation-card{
+  flex:0 0 57px!important;min-height:57px!important;grid-template-columns:34px minmax(0,1fr) 85px!important;
+  gap:7px!important;padding:5px 8px!important;overflow:hidden!important;
+}
+body.portrait-landscape-sim .operation-number{width:29px!important;height:29px!important;font-size:11px!important}
+body.portrait-landscape-sim .operation-details small{font-size:7px!important}
+body.portrait-landscape-sim .operation-details strong{font-size:9px!important}
+body.portrait-landscape-sim .operation-details p{font-size:7px!important;line-height:1.2!important;margin:1px 0!important}
+body.portrait-landscape-sim .operation-progress strong{font-size:9px!important}
+body.portrait-landscape-sim .operation-progress small{font-size:6px!important}
+body.portrait-landscape-sim .menu-chapter-strip{
+  flex:0 0 34px!important;min-height:34px!important;display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:4px!important;margin:0!important;overflow:hidden!important;
+}
+body.portrait-landscape-sim .menu-chapter-strip>div{padding:3px 5px!important;display:grid!important;grid-template-columns:auto 1fr;align-items:center!important;gap:2px 5px!important}
+body.portrait-landscape-sim .menu-chapter-strip b{font-size:9px!important;grid-row:1/3!important}
+body.portrait-landscape-sim .menu-chapter-strip span{font-size:7px!important;white-space:nowrap!important}
+body.portrait-landscape-sim .menu-chapter-strip small{font-size:6px!important;white-space:nowrap!important}
+body.portrait-landscape-sim .menu-chapter-strip .more-chapters{display:none!important}
+body.portrait-landscape-sim .panel-heading{flex:0 0 auto!important;margin:0!important}
+body.portrait-landscape-sim .panel-heading h2{font-size:clamp(17px,2.6vw,24px)!important;margin:2px 0!important}
+body.portrait-landscape-sim .panel-heading p{font-size:9px!important;margin:2px 0!important}
+body.portrait-landscape-sim .dossier-card{min-height:0!important;padding:9px 13px!important;overflow:hidden!important}
+body.portrait-landscape-sim .dossier-card h3{font-size:16px!important;margin:4px 0!important}
+body.portrait-landscape-sim .dossier-card>p{font-size:9px!important;margin:3px 0!important}
+body.portrait-landscape-sim .dossier-facts{gap:7px!important;margin:5px 0!important}
+body.portrait-landscape-sim .dossier-facts>div{padding:5px!important}
+body.portrait-landscape-sim .dossier-facts small{font-size:7px!important}
+body.portrait-landscape-sim .dossier-facts b{font-size:8px!important}
+body.portrait-landscape-sim .panel-action{min-height:34px!important;padding:7px 12px!important}
+body.portrait-landscape-sim .brief-note{font-size:8px!important;margin:0!important}
+body.portrait-landscape-sim .loadout-options{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+body.portrait-landscape-sim .loadout-choice{min-height:115px!important;padding:9px!important}
+body.portrait-landscape-sim .loadout-choice b{font-size:11px!important}
+body.portrait-landscape-sim .loadout-choice small{font-size:8px!important}
+body.portrait-landscape-sim .equipment-note{padding:7px 10px!important;font-size:8px!important}
+body.portrait-landscape-sim .settings-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+body.portrait-landscape-sim .settings-list label{min-height:46px!important;padding:6px 9px!important}
+body.portrait-landscape-sim .settings-list label b{font-size:9px!important}
+body.portrait-landscape-sim .settings-list label small{font-size:7px!important}
+body.portrait-landscape-sim .settings-tip{font-size:8px!important;grid-column:1/-1!important}
+body.portrait-landscape-sim .archive-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+body.portrait-landscape-sim .archive-columns>div{padding:8px!important}
+body.portrait-landscape-sim .archive-columns h3{font-size:10px!important}
+body.portrait-landscape-sim .archive-columns p{font-size:8px!important;line-height:1.45!important}
+body.portrait-landscape-sim .main-menu-shell,
+body.portrait-landscape-sim .menu-main,
+body.portrait-landscape-sim .menu-panel{overscroll-behavior:none!important;scrollbar-width:none!important}
+body.portrait-landscape-sim .main-menu-shell *,
+body.portrait-landscape-sim .menu-main *{overflow-wrap:anywhere}
+@media(max-height:350px){
+ body.portrait-landscape-sim #start-screen{padding:4px!important}
+ body.portrait-landscape-sim .main-menu-shell{grid-template-rows:30px 37px minmax(0,1fr)!important;gap:3px!important}
+ body.portrait-landscape-sim .menu-tab{min-height:35px!important;font-size:8px!important}
+ body.portrait-landscape-sim .campaign-hero{height:105px!important}
+ body.portrait-landscape-sim .campaign-hero p{display:none!important}
+ body.portrait-landscape-sim .menu-panel.active{gap:4px!important}
+}
